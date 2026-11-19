@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Warming Adriatic — 66 years of Adriatic sea temperature</title>
+<meta name="description" content="Month-by-month sea surface temperature of the North, Central and South Adriatic since 1960, as warming stripes. Ships measured it; the colors show what changed.">
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#0a121d; --card:#0f1c2c; --line:#22364c; --ink:#e6eef7; --mut:#8ba3b8; --faint:#5d7690;
+  --north:#e8886a; --central:#e9c46a; --south:#6aa9d8; --accent:#f2a76b;
+}
+*{box-sizing:border-box;margin:0}
+html{background:var(--bg)}
+body{
+  color:var(--ink);
+  font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  max-width:1060px;margin:0 auto;padding:0 22px 70px;
+  background:radial-gradient(1100px 480px at 50% -160px,#152a41 0%,var(--bg) 60%) no-repeat;
+}
+.serif{font-family:Georgia,"Iowan Old Style","Times New Roman",serif}
+.overline{letter-spacing:.32em;text-transform:uppercase;font-size:11px;color:var(--faint);margin:44px 0 14px}
+.overline b{color:var(--accent);font-weight:600}
+h1{font-size:clamp(30px,5.4vw,52px);line-height:1.12;font-weight:500;letter-spacing:-.01em}
+h1 em{color:var(--accent);font-style:italic}
+.tagline{color:var(--mut);max-width:760px;margin:18px 0 6px;font-size:17px}
+.badge{display:inline-block;margin-top:16px;padding:7px 14px;border:1px solid #a55555;border-radius:999px;background:#2a1414;color:#f0b8b8;font-size:13px}
+#stats{display:flex;gap:14px;flex-wrap:wrap;margin:26px 0 8px}
+.stat{flex:1 1 200px;border:1px solid var(--line);border-radius:14px;padding:14px 18px 12px;background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0)) ,var(--card);position:relative;overflow:hidden}
+.stat::before{content:"";position:absolute;top:0;left:0;right:0;height:3px;background:var(--rc)}
+.stat .who{display:flex;align-items:center;gap:8px;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mut)}
+.stat .dot{width:8px;height:8px;border-radius:50%;background:var(--rc)}
+.stat b{display:block;font-size:30px;font-weight:600;margin-top:6px;color:#fff;font-family:Georgia,serif}
+.stat b small{font-size:15px;color:var(--mut);font-weight:400;margin-left:2px}
+.stat .per{font-size:12.5px;color:var(--faint)}
+#legend{display:flex;align-items:center;gap:10px;margin:22px 0 0;font-size:12.5px;color:var(--faint)}
+#legend .bar{flex:0 0 220px;height:10px;border-radius:5px;background:linear-gradient(90deg,#08306b,#2166ac,#4393c3,#92c5de,#d1e5f0,#f7f7f7,#fddbc7,#f4a582,#d6604d,#b2182b,#67001f)}
+#loc{display:flex;gap:28px;align-items:flex-start;flex-wrap:wrap;margin:34px 0 0}
+#mapwrap{flex:0 0 330px;min-width:280px;border:1px solid var(--line);border-radius:14px;background:var(--card);padding:12px}
+#mapwrap svg{width:100%;height:auto;display:block}
+#howto{flex:1 1 320px;min-width:280px}
+#howto h2{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--faint);font-weight:600}
+#howto p{color:var(--mut);margin-top:10px}
+#howto p b{color:var(--ink)}
+#regions{margin-top:34px;display:grid;gap:22px}
+section{border:1px solid var(--line);border-radius:16px;background:var(--card);padding:18px 20px 16px}
+section h2{display:flex;align-items:baseline;gap:10px;font-size:19px;font-weight:600;font-family:Georgia,serif;color:#fff}
+section h2 .dot{width:10px;height:10px;border-radius:50%;transform:translateY(-1px)}
+section h2 small{color:var(--faint);font-family:-apple-system,system-ui,sans-serif;font-size:13px;font-weight:400}
+.row{display:flex;margin-top:14px}
+.mlabel{flex:0 0 16px;display:flex;flex-direction:column;justify-content:space-around;color:var(--faint);font-size:9.5px;text-align:right;padding-right:6px}
+.stripewrap{position:relative;flex:1}
+.stripe{display:grid;grid-template-columns:repeat(66,1fr);gap:1px;background:#0c1725;border-radius:6px;overflow:hidden;outline:1px solid #1a2c40}
+.cell{aspect-ratio:1;display:block;cursor:crosshair}
+.cell.on{outline:2px solid #fff;z-index:2;position:relative}
+.cursor{position:absolute;top:0;bottom:0;width:calc(100%/66);border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 18px 2px rgba(242,167,107,.35);pointer-events:none;display:none}
+.cols{display:flex;justify-content:space-between;color:#4d647d;font-size:11px;margin-left:22px;margin-top:6px}
+#head{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:26px}
+#info{flex:1 1 320px;min-height:56px;padding:14px 18px;background:#0b1622;border:1px solid var(--line);border-radius:12px;font:15px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--mut)}
+#info b{color:#fff;font-weight:600}
+#info .warm{color:#f4a582}
+#info .cool{color:#92c5de}
+button{
+  background:linear-gradient(180deg,#1d4266,#16324e);color:var(--ink);
+  border:1px solid #2b567e;border-radius:12px;padding:13px 22px;font-size:15px;cursor:pointer;
+  box-shadow:0 6px 18px rgba(10,20,40,.5)
+}
+button:hover{background:linear-gradient(180deg,#255081,#1d4266)}
+#hero{margin-top:36px;border:1px solid var(--line);border-radius:16px;background:var(--card);padding:20px}
+#hero .cap{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);margin-bottom:14px}
+.hstack{display:flex;gap:14px}
+.hlabels{flex:0 0 104px;display:grid;gap:10px}
+.hlabels span{font-size:13px;color:var(--mut);text-align:right;align-self:center}
+.hlabels span b{display:block;color:var(--ink);font-size:12px;letter-spacing:.08em}
+.hbands{position:relative;flex:1;display:grid;gap:10px;justify-items:stretch}
+.hband{display:grid;grid-template-columns:repeat(66,1fr);height:42px;border-radius:5px;overflow:hidden;outline:1px solid #1a2c40}
+.hbar{display:block;height:100%;cursor:crosshair}
+.hbar.on{box-shadow:inset 0 0 0 2px #fff}
+#hero .cursor{position:absolute;top:0;bottom:0;width:calc(100%/66);border-radius:3px;box-shadow:0 0 0 1px rgba(255,255,255,.5),0 0 16px 2px rgba(242,167,107,.35);pointer-events:none;display:none}
+.hnote{margin-top:14px;font-size:13px;color:var(--faint);line-height:1.7}
+.hnote b{color:var(--mut);font-weight:600}
+@media (max-width:640px){.hlabels{flex-basis:56px}.hlabels span b{font-size:0}.hband{height:30px}}
+footer{margin-top:64px;border-top:1px solid var(--line);padding-top:20px}
+footer .fine{color:#5d7690;font-size:13px;margin-top:10px}
+a{color:#7ab7ff}
+</style>
+</head>
+<body>
+<p class="overline" id="overline"><b>Warming Adriatic</b> · ship &amp; buoy record · 1960–2025</p>
+<h1 class="serif">The Adriatic is getting warmer.<br>You can <em>see</em> the summers turn red.</h1>
+<p class="tagline">Sixty-six years of sea-surface temperature, month by month, in three stripes of the sea. Reading left to right is reading time: the blues were the sixties, the reds are now. The middle of each block is high summer.</p>
+<p id="placeholder" hidden class="badge"></p>
+<div id="stats"></div>
+<div id="legend"><span>−2.5 °C</span><span class="bar"></span><span>+2.5 °C vs 1991–2020 average</span></div>
+<div id="bridge" style="margin-top:26px;color:#9db3c8">Curious what the sea is doing <i>today</i>? <a href="https://marespot.com">MareSpot shows live Adriatic sea temperature</a>, wind and shelter for every cove.</div>
+
+<div id="hero">
+  <p class="cap">One bar per year — the whole story in one picture</p>
+  <div class="hstack">
+    <div class="hlabels" id="hlabels"></div>
+    <div class="hbands" id="hbands"><div class="cursor"></div></div>
+  </div>
+  <p class="hnote"><b>Blue</b> = colder than the 1991–2020 average, <b>red</b> = warmer. The <b>top band is the shallow North Adriatic</b>: it turns red sooner than the deep south, because shallow water answers warming first. Hover any bar for the numbers; the month-by-month blocks below open every year into its twelve months.</p>
+</div>
+
+<div id="head">
+  <div id="info">Hover or tap a bar or a cell to see the numbers.</div>
+  <button id="play" type="button">Watch it warm · 1960 → 2025</button>
+</div>
+
+<div id="loc">
+  <div id="mapwrap"></div>
+  <div id="howto">
+    <h2>How to read it</h2>
+    <p><b>Columns are years</b>, 1960 to 2025. <b>Rows are months</b>, January at the top, December at the bottom. The color of each cell is that month's temperature measured against the 1991–2020 average for the same month.</p>
+    <p style="margin-top:10px">The three blocks are the three basins of the Adriatic: the shallow north behind the islands, the long central channel, the deep south. The shallow north has less water to warm, so it answers the sun first — it also answers climate change first.</p>
+    <p style="margin-top:10px">Hover or tap any cell to see the measured value.</p>
+  </div>
+</div>
+
+<div id="regions">
+  <section id="region-north"><h2><span class="dot"></span>North Adriatic <small>Gulf of Trieste · Kvarner · Zadar shallows</small></h2><div class="row"></div></section>
+  <section id="region-central"><h2><span class="dot"></span>Central Adriatic <small>Kornati to the Palagruža sill</small></h2><div class="row"></div></section>
+  <section id="region-south"><h2><span class="dot"></span>South Adriatic <small>deep basin · Otranto Strait</small></h2><div class="row"></div></section>
+</div>
+
+<footer>
+  <p><b>A MareSpot experiment — live Adriatic wind, shelter &amp; sea temperature at <a href="https://marespot.com">marespot.com</a></b></p>
+  <p class="fine" id="sourceline">Data source and license appear here once the real pipeline has run. Baseline: 1991–2020 monthly means. Month values are area means over each sub-basin's sea cells.</p>
+</footer>
+
+<script>
+const MONTHS=["January","February","March","April","May","June","July","August","September","October","November","December"];
+const MLETTER="JFMAMJJASOND";
+const PALETTE=["#08306b","#2166ac","#4393c3","#92c5de","#d1e5f0","#f7f7f7","#fddbc7","#f4a582","#d6604d","#b2182b","#67001f"];
+const RHEX={north:"#e8886a",central:"#e9c46a",south:"#6aa9d8"};
+const RCOLOR={north:"var(--north)",central:"var(--central)",south:"var(--south)"};
+let SST=null;
+
+function color(a){
+  // diverging blue..red, clamp ±2.5 °C
+  const x=Math.max(-2.5,Math.min(2.5,a))/2.5;         // -1..1
+  const p=x*0.5+0.5;                                    // 0..1
+  const f=p*(PALETTE.length-1),i=Math.min(PALETTE.length-2,Math.floor(f)),t=f-i;
+  const r1=PALETTE[i],r2=PALETTE[i+1];
+  const c=h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+  const A=c(r1),B=c(r2);
+  return "rgb("+Math.round(A[0]+(B[0]-A[0])*t)+","+Math.round(A[1]+(B[1]-A[1])*t)+","+Math.round(A[2]+(B[2]-A[2])*t)+")";
+}
+function trend(rows,mode){ // rows: yearly [anom x12] -> degC per year; mode all|summer
+  const pts=[];
+  rows.forEach((r,y)=>{
+    const use=r.filter((v,i)=>(mode!=="summer"||(i>=5&&i<=7))&&v!==null);
+    if(use.length)pts.push([y+SST.meta.years[0],use.reduce((a,b)=>a+b,0)/use.length]);
+  });
+  const n=pts.length,mx=pts.reduce((s,p)=>s+p[0],0)/n,my=pts.reduce((s,p)=>s+p[1],0)/n;
+  let num=0,den=0;pts.forEach(p=>{num+=(p[0]-mx)*(p[1]-my);den+=(p[0]-mx)**2});
+  return num/den; // per year
+}
+function buildHero(){
+  const lab=document.getElementById("hlabels");
+  const bands=document.getElementById("hbands");
+  lab.innerHTML="";
+  bands.querySelectorAll(".hband").forEach(b=>b.remove());
+  for(const k of ["north","central","south"]){
+    const r=SST.regions[k];
+    const L=document.createElement("span");
+    L.innerHTML=`<b>${r.name.toUpperCase()}</b>`;
+    lab.appendChild(L);
+    const band=document.createElement("div");band.className="hband";
+    r.a.forEach((rowA,ry)=>{
+      const bar=document.createElement("div");bar.className="hbar";
+      const vals=rowA.filter(v=>v!==null&&!isNaN(v));
+      if(!vals.length){bar.style.background="#152436"}
+      else{
+        const a=vals.reduce((x,y)=>x+y,0)/vals.length;
+        const tv=r.t[ry].filter(v=>v!==null&&!isNaN(v));
+        bar.style.background=color(a);
+        bar.dataset.k=k;bar.dataset.y=r.years[ry];bar.dataset.a=a;
+        bar.dataset.t=tv.length?tv.reduce((x,y)=>x+y,0)/tv.length:"";
+        bar.addEventListener("pointerenter",e=>showAnnual(e.currentTarget));
+        bar.addEventListener("click",()=>{document.getElementById("region-"+k).scrollIntoView({behavior:"smooth",block:"start"})});
+      }
+      band.appendChild(bar);
+    });
+    bands.appendChild(band);
+  }
+}
+function showAnnual(el){
+  document.querySelectorAll(".hbar.on,.cell.on").forEach(c=>c.classList.remove("on"));
+  el.classList.add("on");
+  const a=+el.dataset.a,t=el.dataset.t;
+  document.getElementById("info").innerHTML=
+    `<b>${el.dataset.y}</b> · ${SST.regions[el.dataset.k].name} — annual mean `
+    +`<b class="${a>=0?'warm':'cool'}">${a>=0?"+":""}${a.toFixed(2)} °C</b> vs 1991–2020`
+    +(t!==""?` · monthly means averaged ${r1(+t)} °C`:" · no data");
+}
+function build(){
+  document.getElementById("placeholder").hidden=!SST.meta.placeholder;
+  if(SST.meta.placeholder){
+    document.getElementById("placeholder").textContent="SAMPLE DATA — deterministic placeholder numbers, clearly flagged, so the layout can be reviewed before the real pipeline runs. Not measurements. The real series replaces them before launch (AGENTS.md).";
+    document.getElementById("overline").innerHTML="<b>Warming Adriatic</b> · sample data preview · not measurements";
+  } else {
+    document.getElementById("overline").innerHTML="<b>Warming Adriatic</b> · ship &amp; buoy record · 1960–2025";
+  }
+  const st=document.getElementById("stats");
+  let h="";
+  for(const k of ["north","central","south"]){
+    const r=SST.regions[k];
+    const w=trend(r.a,"summer")*10;
+    const span=trend(r.a,"summer")*(SST.meta.years[1]-SST.meta.years[0]);
+    h+=`<div class="stat" style="--rc:${RCOLOR[k]}">`
+      +`<span class="who"><span class="dot"></span>${r.name} · summer (Jun–Aug)</span>`
+      +`<b>${span>=0?"+":""}${span.toFixed(1)}<small>°C warmer</small></b>`
+      +`<span class="per">since ${SST.meta.years[0]} · ${w>=0?"+":""}${w.toFixed(2)} °C per decade</span></div>`;
+  }
+  st.innerHTML=h;
+  buildHero();
+  if(SST.meta.placeholder){
+    document.getElementById("sourceline").textContent="PLACEHOLDER DATA — sample series, CC0, generated by this project's script. Real measurements arrive before launch. Baseline: 1991–2020 monthly means.";
+  } else {
+    document.getElementById("sourceline").textContent="Data: "+SST.meta.source+" · Baseline: "+SST.meta.baseline+" · Area means over each sub-basin's sea cells.";
+  }
+  for(const k of ["north","central","south"]){
+    const r=SST.regions[k];
+    const row=document.querySelector("#region-"+k+" .row");
+    const lab=document.createElement("div");lab.className="mlabel";
+    for(let m=0;m<12;m++){const s=document.createElement("span");s.textContent=MLETTER[m];lab.appendChild(s)}
+    const sw=document.createElement("div");sw.className="stripewrap";
+    const grid=document.createElement("div");grid.className="stripe";
+    grid.setAttribute("role","img");
+    grid.setAttribute("aria-label",r.name+" warming stripes, "+SST.meta.years[0]+" to "+SST.meta.years[1]);
+    const dq=document.querySelector("#region-"+k+" h2 .dot");dq.style.background=RCOLOR[k];
+    r.a.forEach((rowA,ry)=>rowA.forEach((a,rm)=>{
+      const d=document.createElement("div");d.className="cell";
+      if(a===null||a===undefined){d.style.background="#152436"}
+      else{d.style.background=color(a);
+        d.dataset.y=r.years[ry];d.dataset.m=rm;d.dataset.a=a;d.dataset.t=r.t[ry][rm];
+        d.addEventListener("pointerenter",show);d.addEventListener("click",pick);
+      }
+      grid.appendChild(d);
+    }));
+    const cur=document.createElement("div");cur.className="cursor";
+    sw.appendChild(grid);sw.appendChild(cur);
+    row.appendChild(lab);row.appendChild(sw);
+    const cols=document.createElement("div");cols.className="cols";
+    cols.innerHTML=`<span>${SST.meta.years[0]}</span><span>1990</span><span>2010</span><span>${SST.meta.years[1]}</span>`;
+    row.closest("section").appendChild(cols);
+  }
+  show(fromHash());
+}
+function ev(el){return {y:+el.dataset.y,m:+el.dataset.m,a:+el.dataset.a,t:+el.dataset.t,el}}
+function show(e){
+  let d=null;
+  if(e&&e.el){d=e}
+  else if(e&&e.currentTarget){d=ev(e.currentTarget)}
+  if(!d)return;
+  document.querySelectorAll(".cell.on").forEach(c=>c.classList.remove("on"));
+  d.el.classList.add("on");
+  document.getElementById("info").innerHTML=
+    `<b>${MONTHS[d.m]} ${d.y}</b> · ${r1(d.t)} °C measured · `
+    +`<b class="${d.a>=0?'warm':'cool'}">${d.a>=0?"+":""}${d.a.toFixed(2)} °C</b> vs 1991–2020`;
+}
+function pick(e){show({el:e.currentTarget});
+  const d=ev(e.currentTarget);
+  history.replaceState(null,"","#"+e.currentTarget.closest("section").id.slice(7)+"-"+d.y+"-"+(d.m+1));}
+function r1(v){return v===null?"no data":(Math.round(v*10)/10).toFixed(1)}
+function fromHash(){
+  const m=location.hash.match(/^#(\w+)-(\d{4})-(\d{1,2})$/);
+  if(!m)return null;
+  const el=[...document.querySelectorAll("#region-"+m[1]+" .cell")].find(c=>c.dataset.y===m[2]&&+c.dataset.m===m[3]-1);
+  if(el){el.scrollIntoView({block:"center"});return {el}}
+  return null;
+}
+document.getElementById("play").addEventListener("click",()=>{
+  const cur=[...document.querySelectorAll("#hero .cursor")].concat(
+    [...document.querySelectorAll(".stripewrap")].map(g=>g.querySelector(".cursor")));
+  const Y0=SST.meta.years[0],N=SST.meta.years[1]-Y0+1;
+  let y=Y0;
+  cur.forEach(c=>{c.style.display="block"});
+  const step=()=>{
+    cur.forEach(c=>{c.style.left=(y-Y0)*(100/N)+"%";c.style.width=(100/N)+"%"});
+    if(y<Y0+N-1){y++;setTimeout(step,26)}
+    else cur.forEach(c=>c.style.display="none");
+  };step();
+});
+
+// locator map: coastline + region split lines
+function project(lon,lat,W){return [ (lon-12)/(20-12)*W, (46.5-lat)/(46.5-41.5)*(W*862/1000) ]}
+function drawMap(coast){
+  const W=330;const svgNS="http://www.w3.org/2000/svg";
+  const svg=document.createElementNS(svgNS,"svg");
+  svg.setAttribute("viewBox","0 0 "+W+" "+Math.round(W*862/1000));
+  const proj=ll=>project(ll[0],ll[1],W);
+  coast.features.forEach(f=>{
+    (f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates).forEach(poly=>{
+      const p=document.createElementNS(svgNS,"path");
+      p.setAttribute("d","M"+poly[0].map(proj).map(pt=>pt[0].toFixed(1)+","+pt[1].toFixed(1)).join("L")+"Z");
+      p.setAttribute("fill","#16324e");p.setAttribute("stroke","#33608f");p.setAttribute("stroke-width","1.2");
+      svg.appendChild(p);
+    });
+  });
+  [[43.6,"north"],[41.8,"central"]].forEach(([lat,k])=>{
+    const y=project(12,lat,W)[1];
+    const l=document.createElementNS(svgNS,"line");
+    l.setAttribute("x1",0);l.setAttribute("x2",W);l.setAttribute("y1",y);l.setAttribute("y2",y);
+    l.setAttribute("stroke",RHEX[k]);
+    l.setAttribute("stroke-dasharray","5 4");l.setAttribute("stroke-width","1");
+    svg.appendChild(l);
+  });
+  const put=(x,y,txt,fill)=>{const t=document.createElementNS(svgNS,"text");
+    t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",fill);t.setAttribute("font-size","13");
+    t.setAttribute("letter-spacing","1.5");t.textContent=txt;svg.appendChild(t)};
+  put(10,22,"NORTH","#e8886a");
+  put(10,project(12,43.6,W)[1]+20,"CENTRAL","#e9c46a");
+  put(10,project(12,41.8,W)[1]+20,"SOUTH","#6aa9d8");
+  document.getElementById("mapwrap").appendChild(svg);
+}
+fetch("data/coastline.json").then(r=>r.json()).then(drawMap).catch(()=>{});
+fetch("data/sst.json").then(r=>r.json()).then(d=>{SST=d;build()}).catch(()=>{
+  document.getElementById("info").textContent="Could not load data. This prototype needs to be served over HTTP (e.g. GitHub Pages).";
+});
+</script>
+</body>
+</html>

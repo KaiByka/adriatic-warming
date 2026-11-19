@@ -1,0 +1,85 @@
+# Data sourcing — Warming Adriatic
+
+Everything below must run offline-at-build once and commit its output.
+Nothing here is fetched at runtime by the site.
+
+## Tier 1 (default): ICOADS 1° Enhanced monthly SST — public domain, no key
+
+- **What:** International Comprehensive Ocean-Atmosphere Data Set, the longest
+  continuous marine record: ship and buoy observations back to the 1960s in the
+  monthly 1° enhanced gridded form. Longer than the satellite record — that is
+  the PR line: "the sea the ships measured".
+- **Where:** NOAA/ERSL via the public ERDDAP at
+  `https://upwell.pfeg.noaa.gov/erddap/` → dataset
+  `noaa_psl_3a7b_f45b_d09a` ("ICOADS 1-degree Enhanced (sst.mean), 1960-present").
+- **Query (Adriatic box, monthly):** see `ERDDAP` constant in
+  `scripts/fetch_sst.py`. Format you can paste in a browser:
+
+  ```
+  https://upwell.pfeg.noaa.gov/erddap/griddap/noaa_psl_3a7b_f45b_d09a.csv?sst[(1960-01-01T00:00:00Z):(2025-12-31T00:00:00Z)][(40.5):(45.5)][(12.5):(19.5)]
+  ```
+
+- **Notes and traps:**
+  - The time axis' maximum is usually the current or last month; if the
+    stop value exceeds the axis max, ERDDAP returns 404. Fetch the axis with
+    the `/info/.../index.csv` endpoint and adjust.
+  - The upstream (PSL OpenDAP) gets rate-limited; if ERDDAP answers 500
+    "Connection cannot be opened", wait minutes, not seconds. Real retry
+    etiquette: backoff ≥ 5 min between attempts, ≤ 3 attempts per run.
+  - Ship sampling is sparse in winter cells near the coast; nulls are honest,
+    keep them ("no data"), never interpolate silently.
+- **License:** US government work — public domain; note this in
+  `site/LICENSE-MANIFEST.json` and the page's data line.
+
+## Tier 2: NOAA OISST v2 monthly (0.25°) — public domain, no key
+
+- Satellite-era blended analysis (AVHRR), 0.25°, monthly means, 1982 → now,
+  from NOAA PSL: `https://psl.noaa.gov/data/gridded/data.noaa.oisst.v2.highres.html`.
+- The OPenDAP endpoint supports ASCII subsetting
+  (`.nc.ascii?sst[time][lat][lon]` — perfect for a stdlib-only pipeline and
+  much finer spatial detail than ICOADS, but it starts in 1982, loses the
+  "ship record since 1960" angle.
+- **Rate limits are hard here** (nginx 429 within seconds of heavy use):
+  chunk time to decades per request, sleep 10–20 s between requests, and
+  verify the exact dataset path first — a 404 from the DAP layer means a
+  wrong `Datasets/<name>/<file.nc>` path; consult the dataset's web page.
+- Useful only if ICOADS becomes unusable or as a sprint-2 comparison.
+
+## Tier 3: Copernicus Marine SST reanalysis — free with registration, CC-BY-4.0
+
+- **What:** the European-quality product ("Adriatic Sea surface temperature
+  reanalysis" via the Mediterranean physics reanalysis), 0.06° or similar.
+- **Where:** `https://marine.copernicus.eu` — free account (with real name
+  and email verification), toolbox `pip install copernicusmarine` (NOT
+  allowed here: pipeline must stay stdlib-only; if used, the agent runs the
+  toolbox in a separate, disposable environment, or downloads the netCDF via
+  the web Data Store and embeds stage with a documented conversion script).
+- **License:** CC-BY-4.0 with the mandatory phrase "contains Copernicus
+  Marine Service information". Acceptable per AGENTS.md rule 6, required
+  attribution on the page and in LICENSE-MANIFEST.
+- **Why not default:** registration wall, heavier tooling, and the
+  public-domain alternative already covers the story. Keep as the
+  "European upgrade / compare mode" if sprint 3.
+
+## Sub-basin definition (all tiers must use the same split)
+
+- **north** — cell centers ≥ 43.6 °N (Gulf of Trieste, Kvarner, Zadar shallows)
+- **central** — 41.8–43.6 °N (Kornati to the Palagruža sill)
+- **south** — < 41.8 °N (deep basin, Otranto)
+
+Coast-adjacent cells of a landlocked grid box are sea if the dataset reports
+a value; there is no manual land/sea mask to maintain.
+
+## Attribution wording on the page
+
+- Data line (footer, always): "Data: {source}, {license}. Baseline:
+  1991–2020 monthly means." Rendered from `meta.source` — if you add a source,
+  update `meta.source`, not the HTML hardcode.
+
+## Ban list
+
+- Anything NC, ND, or "free for non-commercial" — banned fleet-wide.
+- Scraped / hand-typed temperature numbers from news articles or Wikipedia.
+- Weather-provider commercial APIs (their terms forbid republication).
+- "Climatology" images copied from other sites' visualizations — always build
+  your own stripes from the raw series.
