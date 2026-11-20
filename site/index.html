@@ -53,7 +53,7 @@ h1 em{
 #legend .ticks{display:flex;justify-content:space-between;flex:1 1 220px;font-size:10.5px;color:#4d647d;font-variant-numeric:tabular-nums}
 #bridge{margin-top:26px;color:#9db3c8;font-size:15px}
 #hero{margin-top:36px;border:1px solid var(--line);border-radius:18px;background:linear-gradient(180deg,rgba(255,255,255,.03),rgba(255,255,255,0) 40%),var(--card);padding:20px;box-shadow:0 14px 40px rgba(2,8,18,.5)}
-#mapwrap:empty::before{content:"";display:block;aspect-ratio:1000/862}
+#mapwrap:empty::before{content:"";display:block;aspect-ratio:1 / var(--map-h, 1.1)}
 #hero .cap{font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--faint);margin-bottom:14px;display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}
 #hero .cap .r{letter-spacing:.08em;text-transform:none;color:#4d647d}
 .hstack{display:flex;gap:14px}
@@ -620,18 +620,26 @@ document.getElementById("play").addEventListener("click",()=>{
   };step();
 });
 
-// locator map: coastline + region split lines
-function project(lon,lat,W){return [ (lon-12)/(20-12)*W, (46.5-lat)/(46.5-41.5)*(W*862/1000) ]}
+// locator map: coastline (Natural Earth 50m, incl. islands) + region split lines.
+// Full Adriatic box so the south (Otranto) is not cut off.
+const MAP={lon0:11.5,lon1:20.5,lat0:39.8,lat1:47.0};
+MAP.aspect=(MAP.lat1-MAP.lat0)/(MAP.lon1-MAP.lon0)/Math.cos((MAP.lat0+MAP.lat1)/2*Math.PI/180);
+document.documentElement.style.setProperty("--map-h",MAP.aspect.toFixed(4));
+function project(lon,lat,W){const H=W*MAP.aspect;return [ (lon-MAP.lon0)/(MAP.lon1-MAP.lon0)*W, (MAP.lat1-lat)/(MAP.lat1-MAP.lat0)*H ]}
 function drawMap(coast){
-  const W=330;const svgNS="http://www.w3.org/2000/svg";
+  const W=330,H=Math.round(W*MAP.aspect);const svgNS="http://www.w3.org/2000/svg";
   const svg=document.createElementNS(svgNS,"svg");
-  svg.setAttribute("viewBox","0 0 "+W+" "+Math.round(W*862/1000));
+  svg.setAttribute("viewBox","0 0 "+W+" "+H);
   const proj=ll=>project(ll[0],ll[1],W);
+  const sea=document.createElementNS(svgNS,"rect"); // sea background
+  sea.setAttribute("x",0);sea.setAttribute("y",0);sea.setAttribute("width",W);sea.setAttribute("height",H);
+  sea.setAttribute("fill","#0d2036");svg.appendChild(sea);
   coast.features.forEach(f=>{
     (f.geometry.type==="Polygon"?[f.geometry.coordinates]:f.geometry.coordinates).forEach(poly=>{
       const p=document.createElementNS(svgNS,"path");
       p.setAttribute("d","M"+poly[0].map(proj).map(pt=>pt[0].toFixed(1)+","+pt[1].toFixed(1)).join("L")+"Z");
-      p.setAttribute("fill","#16324e");p.setAttribute("stroke","#33608f");p.setAttribute("stroke-width","1.2");
+      p.setAttribute("fill","#16324e");p.setAttribute("stroke","#33608f");p.setAttribute("stroke-width","1");
+      p.setAttribute("stroke-linejoin","round");
       svg.appendChild(p);
     });
   });
@@ -643,15 +651,20 @@ function drawMap(coast){
     svg.appendChild(l);
   });
   const put=(x,y,txt,fill)=>{const t=document.createElementNS(svgNS,"text");
-    t.setAttribute("x",x);t.setAttribute("y",y);t.setAttribute("fill",fill);t.setAttribute("font-size","13");
+    t.setAttribute("x",x);t.setAttribute("y",Math.max(14,Math.min(H-8,y)));t.setAttribute("fill",fill);t.setAttribute("font-size","13");
     t.setAttribute("letter-spacing","1.5");t.textContent=txt;svg.appendChild(t)};
-  const H=Math.round(W*862/1000);
-  put(10,22,"NORTH","#e8886a");
-  put(10,Math.min(project(12,43.6,W)[1]+20,H-24),"CENTRAL","#e9c46a");
-  put(10,Math.max(14,project(12,41.8,W)[1]-8),"SOUTH","#6aa9d8");
+  put(10,project(12,46.2,W)[1],"NORTH","#e8886a");
+  put(10,project(12,43.6,W)[1]+18,"CENTRAL","#e9c46a");
+  put(10,project(12,41.2,W)[1],"SOUTH","#6aa9d8");
   document.getElementById("mapwrap").appendChild(svg);
 }
-fetch("data/coastline.json").then(r=>r.json()).then(drawMap).catch(()=>{});
+// coastline is lazy-loaded when the map scrolls near the viewport (keeps initial
+// main-thread work low); the :empty::before reservation keeps layout stable.
+function loadCoast(){fetch("data/coastline.json").then(r=>r.json()).then(drawMap).catch(()=>{});}
+if("IntersectionObserver" in window){
+  const mio=new IntersectionObserver(es=>{es.forEach(en=>{if(en.isIntersecting){loadCoast();mio.disconnect();}})},{rootMargin:"500px"});
+  mio.observe(document.getElementById("mapwrap"));
+}else loadCoast();
 fetch("data/sst.json").then(r=>r.json()).then(d=>{SST=d;return build()}).catch(()=>{
   document.getElementById("info").textContent="Could not load data. This prototype needs to be served over HTTP (e.g. GitHub Pages).";
 });

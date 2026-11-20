@@ -76,6 +76,11 @@ def main():
     # 7: real-data provenance — footer source names ICOADS, manifest records exact URL + date
     src = str(meta.get("source", ""))
     check("icoads" in src.lower(), f"meta.source names ICOADS (footer renders from it): {src[:90]}")
+    coast_entry = next((d for d in man["data"] if d["file"].endswith("coastline.json")), None)
+    check(coast_entry is not None and "natural earth" in json.dumps(coast_entry).lower()
+          and bool(coast_entry.get("url")) and bool(coast_entry.get("fetched")),
+          f"manifest coastline entry names Natural Earth with url+fetched date: "
+          f"{str(coast_entry)[:120] if coast_entry else None}")
     sst_entry = next((d for d in man["data"] if d["file"].endswith("sst.json")), None)
     check(sst_entry is not None, "manifest has a data/sst.json entry")
     if sst_entry:

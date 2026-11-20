@@ -16,10 +16,13 @@
     {
       "key": "coastline",
       "file": "data/coastline.json",
-      "source": "Natural Earth 110m Land (naturalearthdata.com), clipped to the Adriatic box",
-      "author": "Natural Earth (public domain)",
+      "source": "Natural Earth 50m Land (ne_50m_land), clipped to the Adriatic map box lon 11.5-20.5, lat 39.8-47.0",
+      "author": "Natural Earth (naturalearthdata.com)",
       "license": "Public domain (no rights reserved)",
-      "displayed": "region locator map"
+      "displayed": "region locator map",
+      "url": "https://raw.githubusercontent.com/nvkelso/natural-earth-vector/master/geojson/ne_50m_land.geojson",
+      "fetched": "2026-11-20",
+      "note": "50m resolution chosen so the Adriatic islands render (110m was a blob); rings simplified with Douglas-Peucker (eps 0.002 deg) to keep the file small. Regenerate with `make coastline` (scripts/build_coastline.py, stdlib only); raw GeoJSON cached in cache/ (gitignored)."
     }
   ],
   "policy": [

@@ -1,7 +1,11 @@
-.PHONY: data data-cache placeholder validate serve
+.PHONY: data data-cache coastline placeholder validate serve
 
 data:
 	python3 scripts/fetch_sst.py
+
+# regenerate the locator-map coastline (Natural Earth 50m, public domain)
+coastline:
+	python3 scripts/build_coastline.py
 
 # Escape hatch for build hosts whose network cannot reach upwell.pfeg.noaa.gov:
 # drop the raw ERDDAP CSV chunk(s) for the exact documented query into cache/
