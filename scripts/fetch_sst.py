@@ -117,36 +117,54 @@ def discover_dataset_id():
     return ids[-1]
 
 
-def axis_max_iso(dataset_id):
-    """Time axis maximum from /info/<id>/index.csv (attribute,time,actual_range)."""
-    try:
-        raw = http_get(ERDDAP_BASE + "/info/" + dataset_id + "/index.csv", timeout=60)
-    except Exception as e:
-        print(f"  could not read axis info ({e}); assuming stop {TIME_STOP} is valid")
-        return TIME_STOP
-    rows = list(csv.reader(io.StringIO(raw)))
-    val = units = None
-    for r in rows:
-        if len(r) >= 5 and r[0] == "attribute" and r[1] == "time":
-            if r[2] == "actual_range":
-                val = r[4]
-            elif r[2] == "units":
-                units = r[4]
+def read_info(dataset_id, cache_dir=None):
+    """/info/<id>/index.csv -> {'global': {attr: value}, 'time': {attr: value}}.
+    In cache mode, reads cache/info.csv (the same endpoint, retrieved earlier)."""
+    if cache_dir:
+        p = os.path.join(cache_dir, "info.csv")
+        if os.path.exists(p):
+            raw = open(p, encoding="utf-8").read()
+        else:
+            return {"global": {}, "time": {}}
+    else:
+        try:
+            raw = http_get(ERDDAP_BASE + "/info/" + dataset_id + "/index.csv", timeout=60)
+        except Exception as e:
+            print(f"  could not read dataset info ({e})")
+            return {"global": {}, "time": {}}
+    def _clean(v):
+        # some transports JSON-escape newlines/unicode inside CSV fields
+        if v and ("\\u" in v or "\\n" in v):
+            try:
+                v = bytes(v, "utf-8").decode("unicode_escape")
+            except Exception:
+                pass
+        return v.replace("\n", " ").strip()
+    out = {"global": {}, "time": {}}
+    for r in csv.reader(io.StringIO(raw)):
+        if len(r) >= 5 and r[0] == "attribute":
+            (out["global"] if r[1] == "NC_GLOBAL" else out["time"]).setdefault(r[2], _clean(r[4]))
+    return out
+
+
+def axis_max_iso(info):
+    """Time axis maximum from info['time']['actual_range'] (ISO or seconds since epoch)."""
+    val = info.get("time", {}).get("actual_range")
+    units = info.get("time", {}).get("units", "")
     if not val:
         return TIME_STOP
     hi = val.split(",")[-1].strip()
     if "T" in hi:  # ISO already
         return hi
-    # numeric: seconds since epoch per units string
     try:
+        import datetime
         secs = float(hi)
         origin = "1970-01-01T00:00:00Z"
-        if units and "since" in units:
+        if "since" in units:
             origin = units.split("since", 1)[1].strip()
-        oy, om, od = int(origin[0:4]), int(origin[5:7]), int(origin[8:10])
-        oh, omin, os_ = int(origin[11:13]), int(origin[14:16]), int(origin[17:19])
-        import datetime
-        base = datetime.datetime(oy, om, od, oh, omin, os_, tzinfo=datetime.timezone.utc)
+        base = datetime.datetime(int(origin[0:4]), int(origin[5:7]), int(origin[8:10]),
+                                 int(origin[11:13]), int(origin[14:16]), int(origin[17:19]),
+                                 tzinfo=datetime.timezone.utc)
         return (base + datetime.timedelta(seconds=secs)).strftime("%Y-%m-%dT%H:%M:%SZ")
     except Exception:
         return TIME_STOP
@@ -159,9 +177,10 @@ def build_url(dataset_id, stop):
 
 
 def fetch_real():
-    """Returns (raw_csv, url_used, dataset_id). Polite retries per sourcing.md."""
+    """Returns (raw_csv, url_used, dataset_id, info). Polite retries per sourcing.md."""
     ds = DEFAULT_DATASET_ID
-    amax = axis_max_iso(ds)
+    info = read_info(ds)
+    amax = axis_max_iso(info)
     stop = min(TIME_STOP, amax)
     if stop != TIME_STOP:
         print(f"clamping time stop to axis max {amax}")
@@ -175,7 +194,7 @@ def fetch_real():
                 if "unknown datasetID" in raw or "Connection cannot be opened" in raw:
                     raise RuntimeError(raw.strip().splitlines()[-1][:200])
                 raise RuntimeError("unexpected CSV header: " + raw[:120].replace("\n", " "))
-            return raw, url, ds
+            return raw, url, ds, info
         except urllib.error.HTTPError as e:
             body = ""
             try:
@@ -186,7 +205,8 @@ def fetch_real():
             if "unknown datasetID" in body:
                 print("  dataset ID rotated; re-searching catalog")
                 ds = discover_dataset_id()
-                stop = min(TIME_STOP, axis_max_iso(ds))
+                info = read_info(ds)
+                stop = min(TIME_STOP, axis_max_iso(info))
         except Exception as e:
             last_err = str(e)[:200]
         if attempt < MAX_ATTEMPTS:
@@ -210,9 +230,10 @@ def load_cache(cache_dir):
     import re
     full_re = re.compile(
         r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z,-?\d+(?:\.\d+)?,-?\d+(?:\.\d+)?,(?:NaN|-?\d+(?:\.\d+)?)$")
-    files = sorted(f for f in os.listdir(cache_dir) if f.endswith(".csv"))
+    files = sorted(f for f in os.listdir(cache_dir)
+                   if f.endswith(".csv") and f != "info.csv")  # info.csv is the /info endpoint, not data
     if not files:
-        raise SystemExit(f"--from-cache: no .csv files in {cache_dir}")
+        raise SystemExit(f"--from-cache: no data .csv files in {cache_dir}")
     rows = [["time", "latitude", "longitude", "sst"],
             ["UTC", "degrees_north", "degrees_east", "degree_C"]]
     header_checked = False
@@ -256,9 +277,10 @@ def load_cache(cache_dir):
 
 
 def parse_rows(rows):
-    """rows: CSV incl. 2 header lines -> (data, cells)."""
+    """rows: CSV incl. 2 header lines -> (data, cells, grid_cells)."""
     data = {}    # (region, year, month) -> [temps]
     cellsets = {}  # region -> set((lat, lon))
+    grid = set()   # all (lat, lon) in the box, incl. land/NaN cells
     seen = set()  # (time, lat, lon) — ERDDAP snaps constraint edges to axis values,
     # so adjacent time chunks can overlap by one month; never count a cell-month twice
     n = 0
@@ -270,6 +292,7 @@ def parse_rows(rows):
             continue
         seen.add((ts, lat_s, lon_s))
         lat, lon = float(lat_s), float(lon_s)
+        grid.add((lat, lon))
         year = int(ts[0:4]); month = int(ts[5:7])
         if sst_s in ("NaN", ""):
             continue
@@ -284,8 +307,8 @@ def parse_rows(rows):
         raise SystemExit("No data rows returned from ERDDAP. "
                          "Endpoint may be down or rate-limited; retry later.")
     cells = {k: len(v) for k, v in cellsets.items()}
-    print(f"parsed {n} valid cell-months; cells per region: {cells}")
-    return data, cells
+    print(f"parsed {n} valid cell-months; sea cells per region: {cells}; grid cells in box: {len(grid)}")
+    return data, cells, len(grid)
 
 
 def monthly_series(data):
@@ -316,15 +339,33 @@ def years_span(series):
     return ylo, yhi
 
 
-def build_real(series, clim, cells, out_path, url_used=None, dataset_id=None, cache_note=None):
+def build_real(series, clim, cells, out_path, url_used=None, dataset_id=None, cache_note=None,
+               grid_cells=None, info=None):
     ylo, yhi = years_span(series)
+    g = (info or {}).get("global", {})
+    lic = g.get("license", "")
+    if "United States Government" in lic or "public domain" in lic.lower():
+        lic = "Public domain (US Government work)"  # short label for the page; full NOAA disclaimer stays in the manifest
+    else:
+        lic = lic[:200]
     src = ("NOAA ICOADS 1-degree Enhanced monthly SST (public domain), via NOAA PSL ERDDAP "
            "upwell.pfeg.noaa.gov" + (f" dataset {dataset_id}" if dataset_id else ""))
-    out = {"meta": {"placeholder": False, "generated": time.strftime("%Y-%m-%d", time.gmtime()),
+    fetched = time.strftime("%Y-%m-%d", time.gmtime())
+    out = {"meta": {"placeholder": False, "generated": fetched,
                     "source": src,
                     "baseline": f"{BASELINE[0]}\u2013{BASELINE[1]} monthly means",
                     "years": [ylo, yhi], "unit": "deg C",
-                    "cells": cells},
+                    "cells": cells,
+                    # full-disclosure fields (rendered on the page's Data & method section)
+                    "license": lic,
+                    "query_url": url_used or ERDDAP,
+                    "fetched": fetched,
+                    "dataset": dataset_id or DEFAULT_DATASET_ID,
+                    "dataset_title": g.get("title", "ICOADS 1-degree Enhanced (sst.mean), 1960-present"),
+                    "dataset_history": g.get("history", "").replace("\n", " ").strip(),
+                    "coverage": {"lat": [40.5, 45.5], "lon": [12.5, 19.5],
+                                 "grid_cells": grid_cells or 0,
+                                 "sea_cells": sum(cells.values())}},
            "regions": {}}
     for key, name, desc, _c in REGIONS:
         months = series.get(key, {})
@@ -449,10 +490,14 @@ def build_placeholder(out_path):
     series = monthly_series({(k, y, m): [t] for k, d in raw.items() for (y, m), (t, _n) in d.items()})
     clim = climatology(series)
     cells = {"north": 9, "central": 8, "south": 6}
-    build_real(series, clim, cells, out_path)
+    build_real(series, clim, cells, out_path, grid_cells=48)
     doc = json.load(open(out_path))
     doc["meta"].update({"placeholder": True,
-                        "source": "PLACEHOLDER: deterministic sample series generated by scripts/fetch_sst.py --placeholder (CC0, by this project). Illustrative numbers, not measurements."})
+                        "source": "PLACEHOLDER: deterministic sample series generated by scripts/fetch_sst.py --placeholder (CC0, by this project). Illustrative numbers, not measurements.",
+                        "license": "CC0 1.0 (synthesized by this project; no third-party rights)",
+                        "query_url": "", "fetched": time.strftime("%Y-%m-%d", time.gmtime()),
+                        "dataset": "none (placeholder)", "dataset_title": "PLACEHOLDER sample series",
+                        "dataset_history": ""})
     doc["meta"]["cells"] = cells
     json.dump(doc, open(out_path, "w"), separators=(",", ":"), ensure_ascii=False)
     print("wrote PLACEHOLDER data; meta.placeholder = true (must be false at launch)")
@@ -470,23 +515,26 @@ def main():
         build_placeholder(args.out)
     elif args.from_cache:
         rows, url_used = load_cache(args.from_cache)
-        data, cells = parse_rows(rows)
+        data, cells, grid = parse_rows(rows)
         series = monthly_series(data)
         clim = climatology(series)
+        info = read_info(DEFAULT_DATASET_ID, cache_dir=args.from_cache)
         cache_note = ("Raw CSV retrieved from the exact ERDDAP query URL above via a plain GET from an "
                       "alternate network path (build host could not open a TCP connection to "
                       "upwell.pfeg.noaa.gov on " + time.strftime("%Y-%m-%d", time.gmtime()) +
                       "); time range fetched in per-year chunks of the same query. Processing identical "
                       "to a direct `make data` run.")
         build_real(series, clim, cells, args.out, url_used=url_used,
-                   dataset_id=DEFAULT_DATASET_ID, cache_note=cache_note)
+                   dataset_id=DEFAULT_DATASET_ID, cache_note=cache_note,
+                   grid_cells=grid, info=info)
     else:
-        raw, url_used, ds = fetch_real()
+        raw, url_used, ds, info = fetch_real()
         rows = list(csv.reader(io.StringIO(raw)))
-        data, cells = parse_rows(rows)
+        data, cells, grid = parse_rows(rows)
         series = monthly_series(data)
         clim = climatology(series)
-        build_real(series, clim, cells, args.out, url_used=url_used, dataset_id=ds)
+        build_real(series, clim, cells, args.out, url_used=url_used, dataset_id=ds,
+                   grid_cells=grid, info=info)
 
 
 if __name__ == "__main__":

@@ -84,6 +84,10 @@ button:hover{background:linear-gradient(180deg,#255081,#1d4266)}
 footer{margin-top:64px;border-top:1px solid var(--line);padding-top:20px}
 footer .fine{color:#5d7690;font-size:13px;margin-top:10px}
 a{color:#7ab7ff}
+#data-method p{color:var(--mut);font-size:14.5px;margin-top:10px;line-height:1.65}
+#data-method p b{color:var(--ink)}
+#data-method code{font:13px ui-monospace,Menlo,Consolas,monospace;background:#0b1622;border:1px solid var(--line);border-radius:6px;padding:1px 6px}
+#data-method a{word-break:break-all}
 </style>
 </head>
 <body>
@@ -124,6 +128,16 @@ a{color:#7ab7ff}
   <section id="region-central"><h2><span class="dot"></span>Central Adriatic <small>Kornati to the Palagruža sill</small></h2><div class="row"></div></section>
   <section id="region-south"><h2><span class="dot"></span>South Adriatic <small>deep basin · Otranto Strait</small></h2><div class="row"></div></section>
 </div>
+
+<section id="data-method">
+  <h2><span class="dot" style="background:var(--faint)"></span>Data &amp; method — full disclosure</h2>
+  <p><b>What this is.</b> Monthly mean sea-surface temperature on a 1°×1° grid, measured by ships and buoys — the ICOADS record, which begins in 1960, decades before the satellite era. Dataset: <b id="dm-dataset">…</b> <span id="dm-title"></span>, NOAA ICOADS via NOAA PSL's public ERDDAP server.</p>
+  <p><b>Exact source query.</b> <a id="dm-url" href="#">…</a> — fetched <b id="dm-fetched">…</b> (UTC). License: <span id="dm-license">…</span>. The pipeline is public and reproducible (<code>make data</code> in the repo, stdlib-only <code>scripts/fetch_sst.py</code>); provenance with the same URL and date is recorded in <code>site/LICENSE-MANIFEST.json</code>.</p>
+  <p><b>Area.</b> Adriatic box, lat 40.5–45.5 °N, lon 12.5–19.5 °E: <b id="dm-grid">…</b> grid cells, of which <b id="dm-sea">…</b> report sea values — north <b id="dm-cn">…</b>, central <b id="dm-cc">…</b>, south <b id="dm-cs">…</b>. Sub-basin split: north ≥ 43.6 °N, central 41.8–43.6 °N, south &lt; 41.8 °N.</p>
+  <p><b>Processing.</b> Each region-month is the mean of that region's sea cells for that month. Each cell's color is its anomaly: region-month mean minus the 1991–2020 mean for the same month (baseline: <span id="dm-baseline">…</span>). Displayed precision: temperatures 0.1 °C, anomalies 0.01 °C.</p>
+  <p><b>Missing data.</b> A month with no observations is shown as "no data", never as zero. In the loaded series: north <b id="dm-mn">…</b> missing months (longest gap <b id="dm-hn">…</b>), central <b id="dm-mc">…</b> (longest gap <b id="dm-hc">…</b>), south <b id="dm-ms">…</b> (longest gap <b id="dm-hs">…</b>) — computed live from the data file below.</p>
+  <p><b>Honesty note.</b> Ship sampling is sparse in some winter coastal cells; the gaps above are real gaps in the observational record, not processing errors. Every number on this page is an area mean over a sub-basin's sea cells, not a point measurement.</p>
+</section>
 
 <footer>
   <p><b>A MareSpot experiment — live Adriatic wind, shelter &amp; sea temperature at <a href="https://marespot.com">marespot.com</a></b></p>
@@ -248,7 +262,32 @@ function build(){
     cols.innerHTML=`<span>${SST.meta.years[0]}</span><span>1990</span><span>2010</span><span>${SST.meta.years[1]}</span>`;
     row.closest("section").appendChild(cols);
   }
+  fillDisclosure();
   show(fromHash());
+}
+function fillDisclosure(){
+  const m=SST.meta, set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set("dm-dataset",m.dataset||"—");
+  let t=m.dataset_title||"";
+  if(m.dataset_history){const rel=String(m.dataset_history).split(";").pop().trim();if(rel)t+=" — "+rel;}
+  set("dm-title",t?("("+t+")"):"");
+  const u=document.getElementById("dm-url");
+  if(u){u.textContent=m.query_url||"n/a (placeholder data)";u.href=m.query_url||"#";}
+  set("dm-fetched",m.fetched||"—");
+  set("dm-license",m.license||"—");
+  set("dm-baseline",m.baseline||"—");
+  if(m.coverage){set("dm-grid",m.coverage.grid_cells);set("dm-sea",m.coverage.sea_cells);}
+  set("dm-cn",m.cells.north);set("dm-cc",m.cells.central);set("dm-cs",m.cells.south);
+  for(const [k,mid,hid] of [["north","dm-mn","dm-hn"],["central","dm-mc","dm-hc"],["south","dm-ms","dm-hs"]]){
+    const r=SST.regions[k];
+    let missing=0,run=0,longest=0;
+    r.a.forEach(row=>row.forEach(a=>{
+      if(a===null||a===undefined){missing++;run++;longest=Math.max(longest,run);}
+      else run=0;
+    }));
+    set(mid,missing+" of "+r.a.length*12);
+    set(hid,longest+(longest===1?" month":" months"));
+  }
 }
 function ev(el){return {y:+el.dataset.y,m:+el.dataset.m,a:+el.dataset.a,t:+el.dataset.t,el}}
 function show(e){

@@ -75,6 +75,13 @@ a value; there is no manual land/sea mask to maintain.
 - Data line (footer, always): "Data: {source}, {license}. Baseline:
   1991–2020 monthly means." Rendered from `meta.source` — if you add a source,
   update `meta.source`, not the HTML hardcode.
+- Full disclosure: the page's "Data & method" section (`#data-method` in
+  `site/index.html`) renders source, exact query URL, fetch date, license,
+  dataset title/release, coverage cell counts and live-computed missing-month
+  stats from `sst.json` `meta` — so the disclosure can never drift from the
+  shipped data. Keep the meta fields populated (`query_url`, `fetched`,
+  `license`, `dataset`, `dataset_title`, `coverage`) when changing the
+  pipeline; `make validate` checks them.
 
 ## Sprint 1 operational notes (recorded 2026-11-19, UTC)
 

@@ -13,6 +13,9 @@ Checks (all must pass before deploy):
      manifest's sst.json entry is the real ICOADS source with the exact
      ERDDAP query URL and a fetch date — no PLACEHOLDER anywhere in the
      data provenance (release blocker, AGENTS.md rules 4 and 6).
+  8. On-page full disclosure: index.html contains the "Data & method" section
+     and sst.json meta carries the provenance fields it renders (query_url,
+     fetched date, dataset title, license, coverage cell counts).
 """
 
 import json
@@ -79,6 +82,20 @@ def main():
         check(bool(sst_entry.get("fetched")), f"manifest sst.json entry has fetch date: {sst_entry.get('fetched')}")
         check("public domain" in sst_entry.get("license", "").lower(),
               f"manifest sst.json license is public domain: {sst_entry.get('license')}")
+
+    # 8: on-page full disclosure — section present in HTML, provenance fields in meta
+    check('id="data-method"' in html, "index.html has the Data & method disclosure section")
+    check(str(meta.get("query_url", "")).startswith("https://upwell.pfeg.noaa.gov/erddap/griddap/"),
+          f"meta.query_url is the exact ERDDAP griddap URL: {str(meta.get('query_url'))[:100]}")
+    import re as _re
+    check(bool(_re.match(r"^\d{4}-\d{2}-\d{2}$", str(meta.get("fetched", "")))),
+          f"meta.fetched is a UTC date: {meta.get('fetched')}")
+    check("icoads" in str(meta.get("dataset_title", "")).lower(),
+          f"meta.dataset_title names ICOADS: {meta.get('dataset_title')}")
+    check(bool(meta.get("license")), "meta.license present")
+    cov = meta.get("coverage", {})
+    check(isinstance(cov, dict) and cov.get("grid_cells", 0) > 0 and cov.get("sea_cells", 0) > 0,
+          f"meta.coverage records grid/sea cell counts: {cov}")
 
     print()
     if FAILURES:
