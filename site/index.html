@@ -114,7 +114,9 @@ section h2 .warmest{color:var(--accent);font-size:12px;font-family:-apple-system
 .cell.pin{outline:2px solid var(--accent);outline-offset:-1px;z-index:3;position:relative}
 .cell.cmp{outline:2px solid #7ab7ff;outline-offset:-1px;z-index:3;position:relative}
 .cell.dim{opacity:.14}
-.cursor{position:absolute;top:0;bottom:0;width:calc(100%/66);border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 18px 2px var(--glow);pointer-events:none;display:none}
+.cell.ahead,.hbar.ahead{opacity:.12} /* years the warming wave has not reached yet */
+.cursor{position:absolute;top:0;bottom:0;width:calc(100%/66);border-radius:2px;box-shadow:0 0 0 1px rgba(255,255,255,.55),0 0 18px 2px var(--glow);pointer-events:none;display:none;transition:left .1s linear}
+button:disabled{opacity:.55;cursor:default;transform:none;filter:none}
 .cols{display:flex;justify-content:space-between;color:#4d647d;font-size:11px;margin-left:22px;margin-top:6px;font-variant-numeric:tabular-nums}
 #tip{
   position:fixed;left:0;top:0;z-index:50;pointer-events:none;opacity:0;
@@ -162,7 +164,7 @@ a{color:#7ab7ff}
 @media (prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   .reveal{transition:none}
-  .cell,.hbar,button{transition:none}
+  .cell,.hbar,button,.cursor{transition:none}
 }
 @media print{
   .reveal.pre{opacity:1 !important;transform:none !important}
@@ -682,22 +684,56 @@ function setupReveal(){
   },{threshold:.3});
   sio.observe(stats);
 }
+let sweeping=false;
 document.getElementById("play").addEventListener("click",async ()=>{
-  await fillHero(); for(const k of REGION_KEYS)await fillRegion(k); // sweep needs every stripe built
-  const cur=[...document.querySelectorAll("#hero .cursor")].concat(
-    [...document.querySelectorAll(".stripewrap")].map(g=>g.querySelector(".cursor")));
-  const Y0=SST.meta.years[0],N=SST.meta.years[1]-Y0+1;
-  let y=Y0;
-  cur.forEach(c=>{c.style.display="block"});
-  const step=()=>{
-    cur.forEach(c=>{c.style.left=(y-Y0)*(100/N)+"%";c.style.width=(100/N)+"%"});
-    highlightYear(y,true);
+  if(sweeping)return;
+  sweeping=true;
+  const btn=document.getElementById("play");
+  const orig=btn.textContent;
+  btn.disabled=true;
+  try{
+    await fillHero(); for(const k of REGION_KEYS)await fillRegion(k); // the wave needs every stripe built
+    const Y0=SST.meta.years[0],Y1=SST.meta.years[1],N=Y1-Y0+1;
+    const cur=[...document.querySelectorAll("#hero .cursor")].concat(
+      [...document.querySelectorAll(".stripewrap")].map(g=>g.querySelector(".cursor")));
+    const scrollers=[...document.querySelectorAll(".hstack,#regions .row")];
     const ii=document.getElementById("info");
-    if(ii)ii.innerHTML=`<b>${y}</b> · sweeping ${Y0} → ${Y0+N-1} across all three basins`;
-    if(y<Y0+N-1){y++;setTimeout(step,26)}
-    else{cur.forEach(c=>{c.style.display="none"});document.querySelectorAll(".yr").forEach(e=>e.classList.remove("yr"));
-      if(ii)ii.innerHTML="Hover or tap a bar or a cell to see the numbers."}
-  };step();
+    const reduced=window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const f=v=>(v===null||v===undefined)?"no data":((v>=0?"+":"")+v.toFixed(2));
+    cur.forEach(c=>{c.style.display="block"});
+    btn.textContent="Warming "+Y0+" → "+Y1+" …";
+    // every year starts dimmed ("not yet reached"); the wave reveals it as it passes
+    for(let y=Y0;y<=Y1;y++)(yearEls[y]||[]).forEach(el=>el.classList.add("ahead"));
+    let prev=null;
+    for(let y=Y0;y<=Y1;y++){
+      if(prev!==null)highlightYear(prev,false);
+      highlightYear(y,true);
+      prev=y;
+      (yearEls[y]||[]).forEach(el=>el.classList.remove("ahead")); // wave reveals this year's column
+      const frac=(y-Y0)/N;
+      cur.forEach(c=>{c.style.left=(frac*100)+"%";c.style.width=(100/N)+"%";});
+      for(const sc of scrollers){ // keep the playhead in view on narrow screens
+        const inner=sc.querySelector(".hbands,.stripewrap");
+        if(!inner)continue;
+        const target=frac*inner.offsetWidth-sc.clientWidth*0.35;
+        sc.scrollLeft=Math.max(0,Math.min(target,sc.scrollWidth-sc.clientWidth));
+      }
+      const parts=REGION_KEYS.map(k=>{
+        const r=SST.regions[k],i=r.years.indexOf(y);
+        return r.name.split(" ")[0].toLowerCase()+" "+f(annualAnom(r,i));
+      });
+      ii.innerHTML=`<b>${y}</b> · annual anomaly vs 1991–2020 — ${parts.join(" · ")} °C`;
+      if(!reduced)await new Promise(r=>setTimeout(r,34));
+    }
+    // finish: all years revealed, computed trend summary in the status bar
+    if(prev!==null)highlightYear(prev,false);
+    cur.forEach(c=>{c.style.display="none"});
+    document.querySelectorAll(".ahead").forEach(e=>e.classList.remove("ahead"));
+    const tr=REGION_KEYS.map(k=>trend(SST.regions[k].a,"summer")*10);
+    ii.innerHTML=`<b>${Y0}→${Y1}</b> · summer (Jun–Aug) warming per decade: north ${f(tr[0])} · central ${f(tr[1])} · south ${f(tr[2])} °C — the reds are the recent decades.`;
+  } finally {
+    sweeping=false; btn.disabled=false; btn.textContent=orig;
+  }
 });
 
 // locator map: coastline (Natural Earth 50m, incl. islands) + region split lines.
