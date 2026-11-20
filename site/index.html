@@ -18,7 +18,7 @@ html{background:var(--bg);scroll-behavior:smooth}
 body{
   color:var(--ink);
   font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
-  max-width:1080px;margin:0 auto;padding:0 22px 70px;
+  max-width:1080px;margin:0 auto;padding:0 22px 110px;
   background:
     radial-gradient(1200px 520px at 50% -180px,rgba(38,80,128,.55) 0%,rgba(7,14,24,0) 62%),
     radial-gradient(700px 380px at 88% 320px,rgba(120,60,40,.16) 0%,rgba(7,14,24,0) 60%),
@@ -71,7 +71,12 @@ h1 em{
 .hnote{margin-top:14px;font-size:13px;color:var(--faint);line-height:1.7}
 .hnote b{color:var(--mut);font-weight:600}
 #head{display:flex;align-items:center;gap:18px;flex-wrap:wrap;margin-top:26px}
-#info{flex:1 1 320px;min-height:56px;padding:14px 18px;background:var(--card2);border:1px solid var(--line);border-radius:12px;font:15px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--mut)}
+/* fixed bottom status bar: the hovered/pinned numbers stay visible while
+   scrolling the month stripes (on touch there is no cursor tooltip) */
+#info{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:40;
+  width:min(680px,calc(100% - 24px));padding:12px 18px;background:rgba(11,22,34,.97);
+  border:1px solid var(--line2);border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.6);
+  font:14px/1.5 ui-monospace,"SF Mono",Menlo,Consolas,monospace;color:var(--mut)}
 #info b{color:#fff;font-weight:600}
 #info .warm{color:#f4a582}
 #info .cool{color:#92c5de}
@@ -141,6 +146,7 @@ a{color:#7ab7ff}
   .hband{min-width:640px}
   .mlabel{flex-basis:14px}
   #hero,#mapwrap{padding:14px}
+  #info{bottom:8px;font-size:12.5px;padding:9px 13px}
   .stat b{font-size:26px}
 }
 @media (prefers-reduced-motion:reduce){
@@ -172,7 +178,6 @@ a{color:#7ab7ff}
 </div>
 
 <div id="head">
-  <div id="info">Hover or tap a bar or a cell to see the numbers.</div>
   <div class="seg" role="group" aria-label="Month focus">
     <button type="button" data-mode="all" aria-pressed="true">All year</button>
     <button type="button" data-mode="summer" aria-pressed="false">Summer Jun–Aug</button>
@@ -212,6 +217,7 @@ a{color:#7ab7ff}
   <p class="fine" id="sourceline">Data source and license appear here once the real pipeline has run. Baseline: 1991–2020 monthly means. Month values are area means over each sub-basin's sea cells.</p>
 </footer>
 
+<div id="info">Hover or tap a bar or a cell to see the numbers.</div>
 <div id="tip" role="status" aria-live="polite"></div>
 
 <script>
@@ -525,6 +531,8 @@ function wireInteractions(){
     highlightYear(b.dataset.y,true);
     const k=b.dataset.k,y=+b.dataset.y,r=SST.regions[k],i=r.years.indexOf(y);
     const a=annualAnom(r,i);
+    const html=`<b>${y}</b> · ${r.name} — annual mean anomaly <b class="${a>=0?'warm':'cool'}">${a===null?'no data':fmtA(a)+' °C'}</b> vs 1991–2020`;
+    document.getElementById("info").innerHTML=html;
     showTip(`<b>${y}</b> · ${r.name}<br>annual anomaly <b class="${a>=0?'warm':'cool'}">${a===null?'no data':fmtA(a)+' °C'}</b> vs 1991–2020`,e.clientX,e.clientY);
   });
   bands.addEventListener("pointermove",e=>{
@@ -554,6 +562,12 @@ function wireInteractions(){
     grid.addEventListener("pointerover",e=>{
       const c=e.target.closest(".cell");if(!c)return;
       highlightYear(c.dataset.y,true);
+      let html;
+      if(c.dataset.a!==undefined)
+        html=`<b>${MONTHS[+c.dataset.m]} ${c.dataset.y}</b> · ${SST.regions[c.dataset.k].name} — <b>${r1(+c.dataset.t)} °C</b> measured · <b class="${+c.dataset.a>=0?'warm':'cool'}">${fmtA(+c.dataset.a)} °C</b> vs 1991–2020`;
+      else
+        html=`<b>${MONTHS[+c.dataset.m]} ${c.dataset.y}</b> · ${SST.regions[c.dataset.k].name} — no data for this month`;
+      document.getElementById("info").innerHTML=html;
       if(c.dataset.a!==undefined)
         showTip(`<b>${MONTHS[+c.dataset.m]} ${c.dataset.y}</b> · ${SST.regions[c.dataset.k].name}<br>${r1(+c.dataset.t)} °C · anomaly <b class="${+c.dataset.a>=0?'warm':'cool'}">${fmtA(+c.dataset.a)} °C</b>`,e.clientX,e.clientY);
       else showTip(`<b>${MONTHS[+c.dataset.m]} ${c.dataset.y}</b><br>no data`,e.clientX,e.clientY);
@@ -631,8 +645,11 @@ document.getElementById("play").addEventListener("click",()=>{
   const step=()=>{
     cur.forEach(c=>{c.style.left=(y-Y0)*(100/N)+"%";c.style.width=(100/N)+"%"});
     highlightYear(y,true);
+    const ii=document.getElementById("info");
+    if(ii)ii.innerHTML=`<b>${y}</b> · sweeping ${Y0} → ${Y0+N-1} across all three basins`;
     if(y<Y0+N-1){y++;setTimeout(step,26)}
-    else{cur.forEach(c=>{c.style.display="none"});document.querySelectorAll(".yr").forEach(e=>e.classList.remove("yr"))}
+    else{cur.forEach(c=>{c.style.display="none"});document.querySelectorAll(".yr").forEach(e=>e.classList.remove("yr"));
+      if(ii)ii.innerHTML="Hover or tap a bar or a cell to see the numbers."}
   };step();
 });
 
