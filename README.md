@@ -64,6 +64,14 @@ site/CNAME           ← warming.marespot.com
 - **Sprint 3 — launch.** GoatCounter, GSC URL-prefix property
   (warming.marespot.com), curator pitches when the first heatwave headline
   lands, optional Copernicus tier as a compare mode.
+- **SEO/GEO pass.** OG/Twitter cards with a self-contained data-URI image,
+  inline SVG favicon, theme-color, JSON-LD (WebSite + Dataset with the exact
+  ERDDAP query as distribution + FAQPage), visible Key facts + FAQ sections,
+  `<noscript>` numbers, `llms.txt`, `robots.txt`, `sitemap.xml`, `<main>`
+  landmark + keyboard-focusable scrollers. The static key-fact numbers are
+  recomputed from `sst.json` by `scripts/validate.py` on every run, so the
+  crawler-visible text can never drift from the data — if `make data` ever
+  changes the numbers, `make validate` fails until the text is updated.
 
 ## Rules of the house (all fleet sites)
 

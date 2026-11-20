@@ -1,0 +1,35 @@
+# Warming Adriatic
+
+> Month-by-month sea-surface temperature of the Adriatic Sea (North, Central, South basins) since 1960, drawn as warming stripes. A MareSpot experiment. Page: https://warming.marespot.com/
+
+## Key facts (computed from the data shipped with this page, 1960-2025, baseline 1991-2020 monthly means)
+
+- Summer (Jun-Aug) warming trend: North Adriatic +0.28 °C/decade (+1.80 °C over 1960-2025), Central +0.26 °C/decade (+1.68 °C), South +0.30 °C/decade (+1.93 °C).
+- Annual warming trend: North +0.14, Central +0.18, South +0.18 °C/decade.
+- Warmest years in the series (annual anomaly vs 1991-2020): North 2015 (+1.19 °C), Central 2012 (+0.90 °C), South 2015 (+0.82 °C).
+- Missing months (shown as "no data", never zero): north 17 of 792 (longest gap 2 months), central 2 of 792, south 1 of 792.
+- The South Adriatic shows the strongest summer trend; the North Adriatic the weakest annual trend and the sparsest ship coverage.
+
+## Data source and license
+
+- Source: NOAA ICOADS 1-degree Enhanced (sst.mean), ERDDAP dataset `noaa_psl_3a7b_f45b_d09a` on NOAA PSL's public ERDDAP server upwell.pfeg.noaa.gov. Public domain (US Government work).
+- Exact query used: [ERDDAP CSV, Adriatic box 1960-2025](https://upwell.pfeg.noaa.gov/erddap/griddap/noaa_psl_3a7b_f45b_d09a.csv?sst[(1960-01-01T00:00:00Z):(2025-12-31T00:00:00Z)][(40.5):(45.5)][(12.5):(19.5)])
+- Fetched: 2026-11-20 (UTC). Processed by `scripts/fetch_sst.py` (Python stdlib only; `make data` reproduces it).
+- Coverage: 1°×1° grid over the Adriatic box lat 40.5-45.5 °N, lon 12.5-19.5 °E — 48 grid cells, 35 sea cells (north 7, central 13, south 15). Sub-basin split at 43.6 °N and 41.8 °N. Each region-month is the mean of that region's sea cells; each cell's color is its anomaly vs the 1991-2020 mean for the same month. Displayed precision: temperatures 0.1 °C, anomalies 0.01 °C.
+- Coastline on the locator map: Natural Earth 50m land, public domain.
+- Provenance manifest: https://warming.marespot.com/LICENSE-MANIFEST.json
+
+## How to read the chart
+
+Columns are years 1960-2025 (left to right); rows are months, January at the top, December at the bottom. Blue = colder than the 1991-2020 average for that month, red = warmer. The three hero bars are annual means per basin; the three big blocks below open each year into its twelve months.
+
+## Links
+
+- [This page — Warming Adriatic](https://warming.marespot.com/)
+- [MareSpot — live Adriatic sea temperature, wind and shelter for every cove](https://marespot.com/)
+- [Raw data query (ERDDAP CSV for the Adriatic box, 1960-2025)](https://upwell.pfeg.noaa.gov/erddap/griddap/noaa_psl_3a7b_f45b_d09a.csv?sst[(1960-01-01T00:00:00Z):(2025-12-31T00:00:00Z)][(40.5):(45.5)][(12.5):(19.5)])
+- [Provenance manifest (LICENSE-MANIFEST.json)](https://warming.marespot.com/LICENSE-MANIFEST.json)
+
+## Reuse
+
+The data is public domain. Please credit "NOAA ICOADS 1-degree Enhanced via NOAA PSL ERDDAP" with the query URL above and link [warming.marespot.com](https://warming.marespot.com/).

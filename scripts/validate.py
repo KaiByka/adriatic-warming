@@ -16,6 +16,16 @@ Checks (all must pass before deploy):
   8. On-page full disclosure: index.html contains the "Data & method" section
      and sst.json meta carries the provenance fields it renders (query_url,
      fetched date, dataset title, license, coverage cell counts).
+  9. SEO/GEO: Open Graph + Twitter cards, theme-color/robots meta, JSON-LD
+     (WebSite + Dataset with the exact query URL + FAQPage), robots.txt with
+     sitemap line, sitemap.xml, llms.txt with the query URL and license.
+  10. Crawler-visible key facts: the static (non-script) numbers in
+      index.html (Key facts / FAQ / noscript) are recomputed here from
+      sst.json and must match exactly, so they can never drift from the data.
+  11. Freshness dates: article:modified_time, sitemap lastmod and the
+      llms.txt fetch date must equal meta.fetched.
+  12. Landmarks: <main> wraps the content, the fixed status bar has
+      role="status", and the horizontal scrollers are keyboard-focusable.
 """
 
 import json
@@ -112,6 +122,82 @@ def main():
     cov = meta.get("coverage", {})
     check(isinstance(cov, dict) and cov.get("grid_cells", 0) > 0 and cov.get("sea_cells", 0) > 0,
           f"meta.coverage records grid/sea cell counts: {cov}")
+
+    # 9: SEO/GEO files + structured data
+    check('property="og:title"' in html and 'property="og:image"' in html and 'name="twitter:card"' in html,
+          "Open Graph + Twitter card meta present (self-contained data-URI image, no external asset)")
+    check('name="theme-color"' in html and 'name="robots"' in html and 'name="description"' in html,
+          "theme-color + robots + description meta present")
+    ld = re.search(r'<script type="application/ld\+json">(.*?)</script>', html, re.S | re.I)
+    check(ld is not None, "JSON-LD structured data present")
+    if ld:
+        blob = ld.group(1)
+        check('"Dataset"' in blob and str(meta.get("query_url", "")) in blob,
+              "JSON-LD Dataset distribution carries the exact ERDDAP query URL")
+        check('"FAQPage"' in blob and '"WebSite"' in blob, "JSON-LD has WebSite + FAQPage")
+    robots = open("site/robots.txt").read() if os.path.exists("site/robots.txt") else ""
+    check("Sitemap: https://warming.marespot.com/sitemap.xml" in robots, "robots.txt points at the sitemap")
+    sm = open("site/sitemap.xml").read() if os.path.exists("site/sitemap.xml") else ""
+    check("<loc>https://warming.marespot.com/</loc>" in sm, "sitemap.xml lists the canonical page URL")
+    ll = open("site/llms.txt").read() if os.path.exists("site/llms.txt") else ""
+    check(bool(ll) and str(meta.get("query_url", "")) in ll and "public domain" in ll.lower(),
+          "llms.txt exists with the exact query URL + license")
+
+    # 10: crawler-visible key facts must equal the shipped data
+    y0, y1 = meta["years"]
+
+    def _trend(rows, summer):
+        pts = []
+        for i, r in enumerate(rows):
+            use = [v for j, v in enumerate(r) if (not summer or 5 <= j <= 7) and v is not None]
+            if use:
+                pts.append([y0 + i, sum(use) / len(use)])
+        n = len(pts)
+        mx = sum(p[0] for p in pts) / n
+        my = sum(p[1] for p in pts) / n
+        num = sum((p[0] - mx) * (p[1] - my) for p in pts)
+        den = sum((p[0] - mx) ** 2 for p in pts)
+        return num / den
+
+    for k in ("north", "central", "south"):
+        r = doc["regions"][k]
+        ts = _trend(r["a"], True) * 10
+        ta = _trend(r["a"], False) * 10
+        span = _trend(r["a"], True) * (y1 - y0)
+        miss = sum(1 for row in r["a"] for v in row if v is None)
+        longest = run = 0
+        for row in r["a"]:
+            for v in row:
+                if v is None:
+                    run += 1
+                    longest = max(longest, run)
+                else:
+                    run = 0
+        best = by = None
+        for i, row in enumerate(r["a"]):
+            nn = [v for v in row if v is not None]
+            if len(nn) < 9:
+                continue
+            a = sum(nn) / len(nn)
+            if best is None or a > best:
+                best, by = a, y0 + i
+        facts = [f"{ts:+.2f} °C/decade", f"{span:+.2f} °C", f"{ta:+.2f} °C/decade",
+                 f"{by} ({best:+.2f} °C)", f"{miss} of {len(r['a']) * 12}"]
+        for s in facts:
+            check(s in html, f"static key fact in index.html matches sst.json ({k}): {s!r}")
+        for s in (facts[0], facts[4]):
+            check(s in ll, f"llms.txt carries the data-matched fact ({k}): {s!r}")
+
+    # 11: freshness dates consistent with the data fetch
+    fetched = str(meta.get("fetched", ""))
+    check(f'property="article:modified_time" content="{fetched}"' in html, "article:modified_time equals meta.fetched")
+    check(f"<lastmod>{fetched}</lastmod>" in sm, "sitemap lastmod equals meta.fetched")
+    check(f"Fetched: {fetched}" in ll, "llms.txt fetch date equals meta.fetched")
+
+    # 12: landmarks / keyboard access for scrollers
+    check('<main id="main">' in html, "content wrapped in a single <main> landmark")
+    check('id="info" role="status"' in html, "fixed status bar has role=status")
+    check('tabindex="0"' in html and "row.tabIndex=0" in html, "horizontal scrollers are keyboard-focusable")
 
     print()
     if FAILURES:
