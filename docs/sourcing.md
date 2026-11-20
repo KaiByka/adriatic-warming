@@ -76,6 +76,21 @@ a value; there is no manual land/sea mask to maintain.
   1991–2020 monthly means." Rendered from `meta.source` — if you add a source,
   update `meta.source`, not the HTML hardcode.
 
+## Sprint 1 operational notes (recorded 2026-11-19, UTC)
+
+- Catalog re-check on 2026-11-19: `noaa_psl_3a7b_f45b_d09a` was still the
+  current "ICOADS 1-degree Enhanced (sst.mean), 1.0°, 1960-present" dataset
+  (`history`: Release 3.0.3 covers 202508-present). Time axis then ran
+  1960-01-16 → 2026-10-16, so the 2025-12-31 stop below is inside the axis.
+  `scripts/fetch_sst.py` still re-searches the catalog automatically if the
+  ID ever 404s ("Currently unknown datasetID").
+- Build hosts whose egress cannot open a TCP connection to
+  upwell.pfeg.noaa.gov may retrieve the exact query URL above with any
+  curl-level GET (optionally in decade chunks of the same query) and run
+  `make data-cache` with the raw CSV in `cache/` (gitignored). Same URL,
+  same dataset, same processing — only the transport differs, and the
+  manifest records the exact URL + fetch date either way.
+
 ## Ban list
 
 - Anything NC, ND, or "free for non-commercial" — banned fleet-wide.

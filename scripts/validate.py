@@ -9,6 +9,10 @@ Checks (all must pass before deploy):
   4. index.html references no external scripts (static, no CDN).
   5. Footer credit string present exactly once.
   6. site/LICENSE-MANIFEST.json parses and lists every file in site/data/.
+  7. meta.source names ICOADS (the footer data line renders from it) and the
+     manifest's sst.json entry is the real ICOADS source with the exact
+     ERDDAP query URL and a fetch date — no PLACEHOLDER anywhere in the
+     data provenance (release blocker, AGENTS.md rules 4 and 6).
 """
 
 import json
@@ -59,6 +63,22 @@ def main():
     listed = {d["file"].split("/")[-1] for d in man["data"]}
     shipped = {f for f in os.listdir("site/data")}
     check(shipped <= listed, f"all shipped data files are in LICENSE-MANIFEST ({sorted(shipped)})")
+
+    # 7: real-data provenance — footer source names ICOADS, manifest records exact URL + date
+    src = str(meta.get("source", ""))
+    check("icoads" in src.lower(), f"meta.source names ICOADS (footer renders from it): {src[:90]}")
+    sst_entry = next((d for d in man["data"] if d["file"].endswith("sst.json")), None)
+    check(sst_entry is not None, "manifest has a data/sst.json entry")
+    if sst_entry:
+        blob = json.dumps(sst_entry).lower()
+        check("placeholder" not in blob, "manifest sst.json entry is not PLACEHOLDER")
+        check("upwell.pfeg.noaa.gov/erddap/griddap/" in sst_entry.get("url", ""),
+              "manifest sst.json entry has exact ERDDAP query URL")
+        check("?sst[(" in sst_entry.get("url", "") and "[(40.5):(45.5)][(12.5):(19.5)]" in sst_entry.get("url", ""),
+              "manifest URL carries the Adriatic-box sst query")
+        check(bool(sst_entry.get("fetched")), f"manifest sst.json entry has fetch date: {sst_entry.get('fetched')}")
+        check("public domain" in sst_entry.get("license", "").lower(),
+              f"manifest sst.json license is public domain: {sst_entry.get('license')}")
 
     print()
     if FAILURES:
