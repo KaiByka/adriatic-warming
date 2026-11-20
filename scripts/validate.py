@@ -54,6 +54,11 @@ def main():
 
     # 4: no external scripts/styles/fonts/CDN — nothing fetched at runtime
     html = open("site/index.html").read()
+    # data-honesty: banned claim words must not appear in the static (non-script)
+    # markup; JS-rendered text is built from the loaded data only (AGENTS.md rule 5)
+    static_html = re.sub(r"<script.*?</script>", "", html, flags=re.S | re.I)
+    banned = re.findall(r"\b(record|fastest|unprecedented)\b", static_html, re.I)
+    check(not banned, f"no banned claim words in static markup: {banned}")
     ext = re.findall(r"<script[^>]+src=[\"']http", html, re.I)
     check(not ext, "no external script tags")
     extcss = re.findall(r"<link[^>]+href=[\"']http", html, re.I)

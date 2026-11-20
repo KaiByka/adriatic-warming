@@ -154,7 +154,7 @@ a{color:#7ab7ff}
 </style>
 </head>
 <body>
-<p class="overline" id="overline"><b>Warming Adriatic</b> · ship &amp; buoy record · 1960–2025</p>
+<p class="overline" id="overline"><b>Warming Adriatic</b> · ship &amp; buoy measurements · 1960–2025</p>
 <h1 class="serif">The Adriatic is getting warmer.<br>You can <em>see</em> the summers turn red.</h1>
 <p class="tagline">Sixty-six years of sea-surface temperature, month by month, in three stripes of the sea. Reading left to right is reading time: the blues were the sixties, the reds are now. The middle of each block is high summer.</p>
 <p id="placeholder" hidden class="badge"></p>
@@ -168,7 +168,7 @@ a{color:#7ab7ff}
     <div class="hlabels" id="hlabels"></div>
     <div class="hbands" id="hbands"><div class="cursor"></div></div>
   </div>
-  <p class="hnote"><b>Blue</b> = colder than the 1991–2020 average, <b>red</b> = warmer. The <b>top band is the shallow North Adriatic</b>: it turns red sooner than the deep south, because shallow water answers warming first. Hover any bar for the numbers; the month-by-month blocks below open every year into its twelve months.</p>
+  <p class="hnote"><b>Blue</b> = colder than the 1991–2020 average, <b>red</b> = warmer — the blues were the sixties, the reds are the recent decades. <span id="hn-claim">In this ship-measured series all three basins warm over 1960–2025.</span> Hover any bar for the numbers; the month-by-month blocks below open every year into its twelve months.</p>
 </div>
 
 <div id="head">
@@ -186,7 +186,7 @@ a{color:#7ab7ff}
   <div id="howto">
     <h2>How to read it</h2>
     <p><b>Columns are years</b>, 1960 to 2025. <b>Rows are months</b>, January at the top, December at the bottom. The color of each cell is that month's temperature measured against the 1991–2020 average for the same month.</p>
-    <p style="margin-top:10px">The three blocks are the three basins of the Adriatic: the shallow north behind the islands, the long central channel, the deep south. The shallow north has less water to warm, so it answers the sun first — it also answers climate change first.</p>
+    <p style="margin-top:10px">The three blocks are the three basins of the Adriatic: the shallow north behind the islands, the long central channel, the deep south. <span id="howto-claim">In this series all three basins show a warming trend.</span></p>
     <p style="margin-top:10px">Hover or tap any cell to see the measured value. Hovering one year lights up the same column in every block, so you can compare the basins year by year. Click a cell to pin it; shift-click a year bar to compare two years.</p>
   </div>
 </div>
@@ -199,12 +199,12 @@ a{color:#7ab7ff}
 
 <section id="data-method" class="reveal">
   <h2><span class="dot" style="background:var(--faint)"></span>Data &amp; method — full disclosure</h2>
-  <p><b>What this is.</b> Monthly mean sea-surface temperature on a 1°×1° grid, measured by ships and buoys — the ICOADS record, which begins in 1960, decades before the satellite era. Dataset: <b id="dm-dataset">…</b> <span id="dm-title"></span>, NOAA ICOADS via NOAA PSL's public ERDDAP server.</p>
-  <p><b>Exact source query.</b> <a id="dm-url" href="#">…</a> — fetched <b id="dm-fetched">…</b> (UTC). License: <span id="dm-license">…</span>. The pipeline is public and reproducible (<code>make data</code> in the repo, stdlib-only <code>scripts/fetch_sst.py</code>); provenance with the same URL and date is recorded in <code>site/LICENSE-MANIFEST.json</code>.</p>
+  <p><b>What this is.</b> Monthly mean sea-surface temperature on a 1°×1° grid, measured by ships and buoys — the ICOADS archive, which begins in 1960, decades before the satellite era. Dataset: <b id="dm-dataset">…</b> <span id="dm-title"></span>, NOAA ICOADS via NOAA PSL's public ERDDAP server.</p>
+  <p><b>Exact source query.</b> <a id="dm-url" href="#">…</a> — fetched <b id="dm-fetched">…</b> (UTC). License: <span id="dm-license">…</span>. The pipeline is public and reproducible (<code>make data</code> in the repo, stdlib-only <code>scripts/fetch_sst.py</code>); provenance with the same URL and date is listed in <code>site/LICENSE-MANIFEST.json</code>.</p>
   <p><b>Area.</b> Adriatic box, lat 40.5–45.5 °N, lon 12.5–19.5 °E: <b id="dm-grid">…</b> grid cells, of which <b id="dm-sea">…</b> report sea values — north <b id="dm-cn">…</b>, central <b id="dm-cc">…</b>, south <b id="dm-cs">…</b>. Sub-basin split: north ≥ 43.6 °N, central 41.8–43.6 °N, south &lt; 41.8 °N.</p>
   <p><b>Processing.</b> Each region-month is the mean of that region's sea cells for that month. Each cell's color is its anomaly: region-month mean minus the 1991–2020 mean for the same month (baseline: <span id="dm-baseline">…</span>). Displayed precision: temperatures 0.1 °C, anomalies 0.01 °C.</p>
   <p><b>Missing data.</b> A month with no observations is shown as "no data", never as zero. In the loaded series: north <b id="dm-mn">…</b> missing months (longest gap <b id="dm-hn">…</b>), central <b id="dm-mc">…</b> (longest gap <b id="dm-hc">…</b>), south <b id="dm-ms">…</b> (longest gap <b id="dm-hs">…</b>) — computed live from the data file below.</p>
-  <p><b>Honesty note.</b> Ship sampling is sparse in some winter coastal cells; the gaps above are real gaps in the observational record, not processing errors. Every number on this page is an area mean over a sub-basin's sea cells, not a point measurement.</p>
+  <p><b>Honesty note.</b> Ship sampling is sparse in some winter coastal cells; the gaps above are real gaps in the observations, not processing errors. Every number on this page is an area mean over a sub-basin's sea cells, not a point measurement.</p>
 </section>
 
 <footer>
@@ -392,7 +392,7 @@ async function build(){
     document.getElementById("placeholder").textContent="SAMPLE DATA — deterministic placeholder numbers, clearly flagged, so the layout can be reviewed before the real pipeline runs. Not measurements. The real series replaces them before launch (AGENTS.md).";
     document.getElementById("overline").innerHTML="<b>Warming Adriatic</b> · sample data preview · not measurements";
   } else {
-    document.getElementById("overline").innerHTML="<b>Warming Adriatic</b> · ship &amp; buoy record · 1960–2025";
+    document.getElementById("overline").innerHTML="<b>Warming Adriatic</b> · ship &amp; buoy measurements · 1960–2025";
   }
   const st=document.getElementById("stats");
   let h="";
@@ -447,11 +447,27 @@ async function build(){
     await tick();
   }
   fillDisclosure();
+  fillClaims();
   wireInteractions();
   setupReveal();
   applyMode();
   const p=fromHash();
   if(p)showPin(p);
+}
+function fillClaims(){
+  // Data-honesty rule: the page may only state what the loaded data computes.
+  const ylo=SST.meta.years[0], yhi=SST.meta.years[1];
+  const sumT=REGION_KEYS.map(k=>({k,t:trend(SST.regions[k].a,"summer")*10}));
+  const annT=REGION_KEYS.map(k=>({k,t:trend(SST.regions[k].a,"all")*10}));
+  const maxS=sumT.reduce((a,b)=>b.t>a.t?b:a), minA=annT.reduce((a,b)=>b.t<a.t?b:a);
+  const miss={}; REGION_KEYS.forEach(k=>{miss[k]=SST.regions[k].a.flat().filter(v=>v===null||v===undefined).length;});
+  const maxMiss=REGION_KEYS.reduce((a,b)=>miss[b]>miss[a]?b:a);
+  const nm=k=>SST.regions[k].name;
+  const f=(v)=>(v>=0?"+":"")+v.toFixed(2);
+  const hn=document.getElementById("hn-claim");
+  if(hn)hn.textContent=`In this ship-measured series all three basins warm over ${ylo}–${yhi}: the ${nm(maxS.k)} shows the strongest summer trend (${f(maxS.t)} °C/decade, Jun–Aug) and the ${nm(minA.k)} the weakest annual trend (${f(minA.t)} °C/decade). The ${nm(maxMiss)} also has the sparsest ship coverage (${miss[maxMiss]} of ${(yhi-ylo+1)*12} months missing — shown dark, never as zero).`;
+  const hc=document.getElementById("howto-claim");
+  if(hc)hc.textContent=`In this series the ${nm(maxS.k)} has the strongest summer trend (${f(maxS.t)} °C/decade) and the ${nm(minA.k)} the weakest annual trend (${f(minA.t)} °C/decade); see the cards above for each basin.`;
 }
 function fillDisclosure(){
   const m=SST.meta, set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};

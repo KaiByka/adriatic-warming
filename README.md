@@ -2,9 +2,10 @@
 
 **warming.marespot.com** — a static "warming stripes" visualization of Adriatic
 sea-surface temperature, month by month since 1960, split into three sub-basins.
-The north (the shallow basin behind the islands) warms visibly faster than the
-deep south. Every summer heatwave article about the Adriatic needs a graphic;
-this is the one they can link, embed and quote.
+In the ICOADS ship record all three basins warm over 1960–2025; the page states
+only what the loaded data computes (the deep South shows the strongest summer
+trend, the shallow North the sparsest coverage). Every summer heatwave article
+about the Adriatic needs a graphic; this is the one they can link, embed and quote.
 
 Part of the MareSpot link-magnet fleet:
 - charts.marespot.com — Adriatic old-chart slider (live)
@@ -16,7 +17,9 @@ Part of the MareSpot link-magnet fleet:
 Climate journalists and weather blogs collect reusable, honest visualizations.
 This one: real public-domain data (NOAA ICOADS ship observations, 1960 onward
 — longer than the satellite record), a reproducible pipeline, per-region
-numbers they can quote ("+X °C since 1960, the shallow north warming fastest"),
+numbers they can quote ("+X °C per decade by basin, computed from the shipped
+JSON — summer +0.28/+0.26/+0.30 °C/decade north/central/south as of the
+2026-11-20 fetch"),
 and a color language everyone recognizes in one glance. News-jack: publishes
 BEFORE the first summer heatwave, so it is indexed and quotable exactly when the
 sea-temperature headlines start.

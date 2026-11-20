@@ -75,9 +75,9 @@ UA = {"User-Agent": "adriatic-warming/1.0 (static site data pipeline; NOAA publi
 # Median month dates ICOADS uses, e.g. 1960-01-16T00:00:00Z
 
 REGIONS = [
-    ("north", "North Adriatic", "The shallow basin: Gulf of Trieste to the Kvarner and Zadar archipelago. Warms fastest in a warming climate.", 43.6),
+    ("north", "North Adriatic", "The shallow basin: Gulf of Trieste to the Kvarner and Zadar archipelago. Sparsest ship coverage of the three.", 43.6),
     ("central", "Central Adriatic", "From the Kornati and Split channel down to the Palagru\u017ea sill.", 41.8),
-    ("south", "South Adriatic", "The deep southern basin and Otranto Strait. Most stable of the three.", 0.0),
+    ("south", "South Adriatic", "The deep southern basin and Otranto Strait.", 0.0),
 ]
 
 BASELINE = (1991, 2020)  # WMO standard climate normal period
