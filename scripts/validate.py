@@ -52,10 +52,16 @@ def main():
         check(all(len(row) == 12 for row in r["t"]) and all(len(row) == 12 for row in r["a"]),
               f"{key}: 12 months per year")
 
-    # 4: no external scripts
+    # 4: no external scripts/styles/fonts/CDN — nothing fetched at runtime
     html = open("site/index.html").read()
     ext = re.findall(r"<script[^>]+src=[\"']http", html, re.I)
     check(not ext, "no external script tags")
+    extcss = re.findall(r"<link[^>]+href=[\"']http", html, re.I)
+    check(not extcss, "no external stylesheets/fonts (link href=http)")
+    exturl = re.findall(r"url\(\s*[\"']?https?://", html, re.I)
+    check(not exturl, "no external url() in CSS (fonts/images/fonts)")
+    extimp = re.findall(r"@import", html, re.I)
+    check(not extimp, "no @import in CSS")
 
     # 5: footer credit exactly once
     credit = "A MareSpot experiment — live Adriatic wind, shelter &amp; sea temperature at"
