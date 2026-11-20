@@ -176,6 +176,17 @@ button:disabled{opacity:.55;cursor:default;transform:none;filter:none}
 #nojs{border:1px dashed var(--line2);border-radius:14px;padding:16px 20px;margin-top:30px}
 #nojs p{color:var(--mut);font-size:14.5px;line-height:1.65;margin-top:8px}
 .hstack:focus,.row:focus{outline:2px solid var(--accent);outline-offset:3px;border-radius:8px}
+.dl{display:inline-flex;gap:6px;margin-left:auto;flex:0 0 auto}
+.dl button{padding:3px 10px;font-size:12px;border-radius:8px;box-shadow:none}
+#kit p{color:var(--mut);font-size:14.5px;line-height:1.65;margin-top:10px}
+#kit p b{color:var(--ink)}
+#kit ul{margin:10px 0 0;padding-left:20px;color:var(--mut);font-size:14.5px;line-height:1.75}
+#kit h3{margin-top:18px;font-size:15.5px;color:var(--ink);font-weight:600}
+#kit a{word-break:break-all}
+.caprow{display:flex;gap:8px;align-items:flex-start;margin-top:8px}
+.caprow code,.caprow textarea{flex:1;min-width:0;font:12px/1.55 ui-monospace,Menlo,Consolas,monospace;background:var(--card2);border:1px solid var(--line);border-radius:8px;padding:8px 10px;color:var(--mut);word-break:break-word}
+.caprow textarea{resize:vertical}
+.copy{flex:0 0 auto;padding:6px 12px;font-size:12px;border-radius:8px;box-shadow:none}
 .reveal{transition:opacity .55s ease,transform .55s ease}
 .reveal.pre{opacity:0;transform:translateY(16px)}
 .reveal.in{opacity:1;transform:none}
@@ -227,7 +238,7 @@ a{color:#7ab7ff}
 <div id="bridge">Curious what the sea is doing <i>today</i>? <a href="https://marespot.com">MareSpot shows live Adriatic sea temperature</a>, wind and shelter for every cove.</div>
 
 <nav id="toc" aria-label="On this page">
-  <a href="#keyfacts">Key facts</a><a href="#hero">Year bars</a><a href="#loc">Map &amp; how to read</a><a href="#regions">Month stripes</a><a href="#data-method">Data &amp; method</a><a href="#faq">FAQ</a>
+  <a href="#keyfacts">Key facts</a><a href="#hero">Year bars</a><a href="#loc">Map &amp; how to read</a><a href="#regions">Month stripes</a><a href="#data-method">Data &amp; method</a><a href="#faq">FAQ</a><a href="#kit">Journalist kit</a>
 </nav>
 
 <section id="keyfacts" class="reveal" aria-labelledby="kf-h">
@@ -269,9 +280,9 @@ a{color:#7ab7ff}
 </div>
 
 <div id="regions">
-  <section id="region-north" class="reveal"><h2><span class="dot"></span>North Adriatic <small>Gulf of Trieste · Kvarner · Zadar shallows</small><span class="warmest" id="wm-north"></span></h2><div class="row"></div></section>
-  <section id="region-central" class="reveal"><h2><span class="dot"></span>Central Adriatic <small>Kornati to the Palagruža sill</small><span class="warmest" id="wm-central"></span></h2><div class="row"></div></section>
-  <section id="region-south" class="reveal"><h2><span class="dot"></span>South Adriatic <small>deep basin · Otranto Strait</small><span class="warmest" id="wm-south"></span></h2><div class="row"></div></section>
+  <section id="region-north" class="reveal"><h2><span class="dot"></span>North Adriatic <small>Gulf of Trieste · Kvarner · Zadar shallows</small><span class="warmest" id="wm-north"></span><span class="dl"><button type="button" data-dl="svg" data-k="north" title="Download this block as a standalone SVG">SVG</button><button type="button" data-dl="png" data-k="north" title="Download this block as PNG (2×)">PNG</button></span></h2><div class="row"></div></section>
+  <section id="region-central" class="reveal"><h2><span class="dot"></span>Central Adriatic <small>Kornati to the Palagruža sill</small><span class="warmest" id="wm-central"></span><span class="dl"><button type="button" data-dl="svg" data-k="central" title="Download this block as a standalone SVG">SVG</button><button type="button" data-dl="png" data-k="central" title="Download this block as PNG (2×)">PNG</button></span></h2><div class="row"></div></section>
+  <section id="region-south" class="reveal"><h2><span class="dot"></span>South Adriatic <small>deep basin · Otranto Strait</small><span class="warmest" id="wm-south"></span><span class="dl"><button type="button" data-dl="svg" data-k="south" title="Download this block as a standalone SVG">SVG</button><button type="button" data-dl="png" data-k="south" title="Download this block as PNG (2×)">PNG</button></span></h2><div class="row"></div></section>
 </div>
 
 <section id="data-method" class="reveal">
@@ -298,6 +309,25 @@ a{color:#7ab7ff}
   <p>Yes — ship coverage is sparse in some winter months: north 17 of 792 (longest gap 2 months), central 2 of 792, south 1 of 792. Missing months are shown dark and read "no data", never as zero.</p>
   <h3>Can journalists reuse this figure?</h3>
   <p>Yes — the data is public domain (NOAA ICOADS, a US Government work). Please credit "NOAA ICOADS 1-degree Enhanced via NOAA PSL ERDDAP" with the query URL above, and link this page. The pipeline (<code>make data</code>) is public and reproducible.</p>
+</section>
+
+<section id="kit" class="reveal" aria-labelledby="kit-h">
+  <h2 id="kit-h"><span class="dot" style="background:var(--faint)"></span>For journalists &amp; embeds</h2>
+  <p>Everything on this page is public domain (NOAA ICOADS, a US Government work) — reuse the figures and numbers freely with credit. Each region block has <b>SVG</b> / <b>PNG</b> download buttons in its header (the exported figure carries the source line inside it). Suggested captions with the exact numbers from the data:</p>
+  <div class="caprow"><code id="cap-all">Adriatic Sea warming, 1960–2025: summer (Jun–Aug) sea-surface temperature rose +0.28 °C/decade in the north, +0.26 in the central and +0.30 in the south Adriatic, against the 1991–2020 baseline (NOAA ICOADS, public domain). warming.marespot.com</code><button type="button" class="copy" data-copy="cap-all">Copy</button></div>
+  <div class="caprow"><code id="cap-north">North Adriatic sea-surface temperature, monthly 1960–2025 (NOAA ICOADS 1° grid, public domain). Summer trend +0.28 °C/decade vs 1991–2020; warmest year 2015 (+1.19 °C). warming.marespot.com</code><button type="button" class="copy" data-copy="cap-north">Copy</button></div>
+  <div class="caprow"><code id="cap-central">Central Adriatic sea-surface temperature, monthly 1960–2025 (NOAA ICOADS 1° grid, public domain). Summer trend +0.26 °C/decade vs 1991–2020; warmest year 2012 (+0.90 °C). warming.marespot.com</code><button type="button" class="copy" data-copy="cap-central">Copy</button></div>
+  <div class="caprow"><code id="cap-south">South Adriatic sea-surface temperature, monthly 1960–2025 (NOAA ICOADS 1° grid, public domain). Summer trend +0.30 °C/decade vs 1991–2020; warmest year 2015 (+0.82 °C). warming.marespot.com</code><button type="button" class="copy" data-copy="cap-south">Copy</button></div>
+  <p style="margin-top:16px"><b>Embed this page</b> — the iframe keeps the data disclosure and the MareSpot credit visible, which is the attribution we ask for:</p>
+  <div class="caprow"><textarea id="embedcode" readonly rows="3" aria-label="Embed snippet">&lt;iframe src="https://warming.marespot.com/" width="100%" height="820" style="border:0;border-radius:12px" title="Warming Adriatic — sea-surface temperature 1960–2025" loading="lazy"&gt;&lt;/iframe&gt;</textarea><button type="button" class="copy" data-copy="embedcode">Copy</button></div>
+  <h3>Dataset links</h3>
+  <ul>
+    <li>ERDDAP dataset page: <a href="https://upwell.pfeg.noaa.gov/erddap/info/noaa_psl_3a7b_f45b_d09a/index.html">upwell.pfeg.noaa.gov/erddap/info/noaa_psl_3a7b_f45b_d09a</a></li>
+    <li>Exact CSV query used for this page: <a href="https://upwell.pfeg.noaa.gov/erddap/griddap/noaa_psl_3a7b_f45b_d09a.csv?sst[(1960-01-01T00:00:00Z):(2025-12-31T00:00:00Z)][(40.5):(45.5)][(12.5):(19.5)]">ERDDAP griddap CSV, Adriatic box 1960–2025</a> (fetched 2026-11-20)</li>
+    <li>NOAA ICOADS: <a href="https://icoads.noaa.gov/">icoads.noaa.gov</a> · NOAA PSL ERDDAP server: <a href="https://upwell.pfeg.noaa.gov/erddap/">upwell.pfeg.noaa.gov/erddap</a></li>
+    <li>Locator-map coastline: <a href="https://www.naturalearthdata.com/">Natural Earth</a> (public domain)</li>
+    <li>Provenance manifest: <a href="LICENSE-MANIFEST.json">LICENSE-MANIFEST.json</a> · machine-readable summary: <a href="llms.txt">llms.txt</a></li>
+  </ul>
 </section>
 
 <noscript>
@@ -725,6 +755,71 @@ function wireViewToggle(){
     });
   });
   document.addEventListener("pointerleave",()=>{hideTip();document.querySelectorAll(".yr").forEach(e=>e.classList.remove("yr"));});
+  wireKit();
+}
+
+/* ---------- journalist kit: SVG/PNG export + copy-to-clipboard (all client-side, no network) ---------- */
+function download(name,blob){
+  const a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);a.download=name;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+}
+function regionSVG(k){ // standalone figure, same orientation as the page: columns=years, rows=months
+  const r=SST.regions[k],Y0=SST.meta.years[0],Y1=r.years[r.years.length-1],N=r.years.length;
+  const cw=9,ch=15,gap=1,padL=36,padT=34,padB=54,padR=12;
+  const W=padL+N*cw+padR,H=padT+12*ch+padB;
+  const stops=PALETTE.map((h,i)=>`<stop offset="${(i/(PALETTE.length-1)).toFixed(3)}" stop-color="${h}"/>`).join("");
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" font-family="Helvetica,Arial,sans-serif">`;
+  s+=`<defs><linearGradient id="lg" x1="0" y1="0" x2="1" y2="0">${stops}</linearGradient></defs>`;
+  s+=`<rect width="${W}" height="${H}" fill="#070e18"/>`;
+  s+=`<text x="${padL}" y="21" font-size="14" font-weight="600" fill="#e9f1fa">${r.name} — sea-surface temperature ${Y0}–${Y1}</text>`;
+  for(let ry=0;ry<N;ry++)for(let m=0;m<12;m++){
+    const a=r.a[ry][m];
+    const fill=(a===null||a===undefined)?"#152436":color(a);
+    s+=`<rect x="${padL+ry*cw}" y="${padT+m*ch}" width="${cw-gap}" height="${ch-gap}" fill="${fill}"/>`;
+  }
+  for(let m=0;m<12;m++)s+=`<text x="${padL-8}" y="${padT+m*ch+ch-4}" font-size="9" fill="#5d7690" text-anchor="end">${MLETTER[m]}</text>`;
+  for(let y=Y0;y<Y1;y+=5)s+=`<text x="${padL+(y-Y0)*cw}" y="${padT+12*ch+14}" font-size="9" fill="#4d647d">${y}</text>`;
+  s+=`<text x="${padL+(N-1)*cw}" y="${padT+12*ch+14}" font-size="9" fill="#4d647d" text-anchor="end">${Y1}</text>`;
+  s+=`<text x="${padL}" y="${H-32}" font-size="9.5" fill="#8ba3b8">−2.5 °C</text>`;
+  s+=`<rect x="${padL+36}" y="${H-40}" width="120" height="8" rx="4" fill="url(#lg)"/>`;
+  s+=`<text x="${padL+162}" y="${H-32}" font-size="9.5" fill="#8ba3b8">+2.5 °C anomaly vs 1991–2020</text>`;
+  const ts=trend(r.a,"summer")*10;
+  s+=`<text x="${padL}" y="${H-14}" font-size="9" fill="#5d7690">Monthly means, 1° ICOADS grid · summer trend ${(ts>=0?"+":"")+ts.toFixed(2)} °C/decade · NOAA ICOADS (public domain) · warming.marespot.com</text>`;
+  return s+"</svg>";
+}
+async function regionPNG(k){
+  const svg=regionSVG(k);
+  const url=URL.createObjectURL(new Blob([svg],{type:"image/svg+xml;charset=utf-8"}));
+  try{
+    const img=new Image();
+    await new Promise((res,rej)=>{img.onload=res;img.onerror=()=>rej(new Error("svg rasterize failed"));img.src=url;});
+    const scale=2,c=document.createElement("canvas");
+    c.width=img.naturalWidth*scale;c.height=img.naturalHeight*scale;
+    const ctx=c.getContext("2d");
+    ctx.fillStyle="#070e18";ctx.fillRect(0,0,c.width,c.height);
+    ctx.drawImage(img,0,0,c.width,c.height);
+    const png=await new Promise(res=>c.toBlob(res,"image/png"));
+    download(`adriatic-${k}-${SST.meta.years[0]}-${SST.meta.years[1]}.png`,png);
+  } finally { URL.revokeObjectURL(url); }
+}
+function wireKit(){
+  document.querySelectorAll(".dl button").forEach(b=>b.addEventListener("click",async()=>{
+    const k=b.dataset.k;
+    await fillRegion(k); // the figure is generated from the data, not the DOM
+    if(b.dataset.dl==="svg")download(`adriatic-${k}-${SST.meta.years[0]}-${SST.meta.years[1]}.svg`,new Blob([regionSVG(k)],{type:"image/svg+xml"}));
+    else await regionPNG(k);
+  }));
+  document.querySelectorAll(".copy").forEach(b=>b.addEventListener("click",()=>{
+    const el=document.getElementById(b.dataset.copy);
+    const txt=(el.value!==undefined?el.value:el.textContent);
+    const done=()=>{b.textContent="Copied ✓";setTimeout(()=>b.textContent="Copy",1200);};
+    const fallback=()=>{const ta=document.createElement("textarea");ta.value=txt;document.body.appendChild(ta);ta.select();
+      try{document.execCommand("copy");done();}catch(e){}ta.remove();};
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(txt).then(done,fallback);
+    else fallback();
+  }));
 }
 const keepMonth=m=>mode==="all"||(mode==="summer"&&m>=5&&m<=7)||(mode==="winter"&&(m<=1||m===11));
 async function applyMode(){

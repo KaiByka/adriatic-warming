@@ -199,6 +199,17 @@ def main():
     check('id="info" role="status"' in html, "fixed status bar has role=status")
     check('tabindex="0"' in html and "row.tabIndex=0" in html, "horizontal scrollers are keyboard-focusable")
 
+    # 13: journalist kit (README sprint 2) — export buttons, embed snippet,
+    #     suggested captions (their numbers are covered by check 10), dataset links
+    check('id="kit"' in html, "journalist kit section present")
+    check('iframe src="https://warming.marespot.com/"' in html, "embed snippet iframes the canonical page URL")
+    for host in ("upwell.pfeg.noaa.gov/erddap/info/", "icoads.noaa.gov", "naturalearthdata.com"):
+        check(host in html, f"dataset link present: {host}")
+    check('data-dl="svg"' in html and 'data-dl="png"' in html and "function regionSVG" in html,
+          "per-region SVG/PNG export wired (client-side, generated from the data)")
+    check('id="cap-all"' in html and 'id="cap-north"' in html and 'id="cap-central"' in html and 'id="cap-south"' in html,
+          "suggested captions present (their numbers are enforced by the key-fact check)")
+
     print()
     if FAILURES:
         print("VALIDATION FAILED — do not deploy:")

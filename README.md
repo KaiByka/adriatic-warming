@@ -58,9 +58,15 @@ site/CNAME           ← warming.marespot.com
 - **Sprint 1 — real data.** Run the pipeline against the ICOADS endpoint,
   QA the numbers (coverage per region, no holes > 3 months, anomaly sums to
   ~zero over baseline), kill the placeholder badge, update LICENSE-MANIFEST.
-- **Sprint 2 — journalist kit.** SVG/PNG export of each region block, embed
-  snippet (iframe + attribution), OG image, "suggested caption" lines with
-  the exact quoted numbers, dataset-links page section.
+- **Sprint 2 — journalist kit (done).** Per-region SVG/PNG download buttons
+  in each block header (figures are generated client-side from sst.json and
+  carry the source line inside; PNG is 2× raster). "For journalists & embeds"
+  section with copyable suggested captions (exact quoted numbers, enforced
+  against sst.json by validate.py), an iframe embed snippet pointing at
+  https://warming.marespot.com/ (keeps disclosure + MareSpot credit), and a
+  dataset-links list (ERDDAP dataset page, exact CSV query, ICOADS, Natural
+  Earth, LICENSE-MANIFEST.json, llms.txt). OG image was already a self-contained
+  data-URI SVG from the SEO pass.
 - **Sprint 3 — launch.** GoatCounter, GSC URL-prefix property
   (warming.marespot.com), curator pitches when the first heatwave headline
   lands, optional Copernicus tier as a compare mode.
